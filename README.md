@@ -1,5 +1,5 @@
-# OAuthShim
-The node module provides a "shim" service for clientside web apps adopting serverside OAuth2 or OAuth1 authentication but fighting to keep it all the browser, and shims the tedious dog legging through servers that has become OAuth1's curse.
+# OAuth-shim
+This node module provides a "shim" service for clientside web apps adopting serverside OAuth2 or OAuth1 authentication but fighting to keep it all the browser, and shims the tedious dog legging through servers that has become OAuth1's curse.
 
 
 ## Use case
@@ -15,12 +15,12 @@ Popular API's like Twitter, Dropbox and Yahoo require this server-to-server auth
 
 Install the package
 
-	npm install oauthshim
+	npm install oauth-shim
 
 
 ## Using with ExpressJS
 	
-	var oauthshim = require('oauthshim'),
+	var oauthshim = require('oauth-shim'),
 		express = require('express');
 
 	var app = express();
