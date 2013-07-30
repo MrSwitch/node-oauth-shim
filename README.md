@@ -134,9 +134,9 @@ The OAuth 1.0 API requires that each request is uniquely signed with the applica
 
 ### A simple GET Redirect
 
-To sign a request to `[API_PATH]`, use the `[access_token]` returned in OAuth 1.0 above and send to the auth-server. 
+To sign a request to `[API_PATH]`, use the `[ACCESS_TOKEN]` returned in OAuth 1.0 above and send to the auth-server. 
 
-	?access_code=[ACCESS_CODE]
+	?access_token=[ACCESS_TOKEN]
 	&path=[API_PATH]
 
 The oauth shim signs and redirects the requests to the `[API_PATH]` e.g.
@@ -149,14 +149,14 @@ If the initial request was other than a GET request, it will be proxied through 
 
 If the end server supports CORS and a lot of data is expected to be either sent or returned. The burded on the oauthshim can be lessened by merely returning the signed request url and handling the action elsewhere. 
 
-	?access_code=[ACCESS_CODE]
+	?access_token=[ACCESS_TOKEN]
 	&path=[API_PATH]
 	&then=return
 
 ### Proxying the Request
 Conversely forcing the request to proxy through the oauthshim is achieved by applying the flag then=proxy. CORS headers are added to the response. This naturally is the slow route for data and is best avoided.
 
-	?access_code=[ACCESS_CODE]
+	?access_token=[ACCESS_TOKEN]
 	&path=[API_PATH]
 	&then=proxy
 
@@ -164,7 +164,7 @@ Conversely forcing the request to proxy through the oauthshim is achieved by app
 ### Change the method and add callback for JSONP
 Add a JSONP callback function and override the method. E.g.
 
-	?access_code=[ACCESS_CODE]
+	?access_token=[ACCESS_TOKEN]
 	&path=[API_PATH]
 	&then=return
 	&method=post
