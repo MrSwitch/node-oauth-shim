@@ -92,9 +92,9 @@ OAuth 1.0 has a number of steps so forgive the verbosity here. An app is require
 	&state=[STATE]
 
 
-The OAuthShim signs the client request and redirects the user to the providers login page defined by [OAUTH_AUTHRIZATION_URL].
+The OAuthShim signs the client request and redirects the user to the providers login page defined by `[OAUTH_AUTHRIZATION_URL]`.
 
-Once the user has signed in they are redirected back to a page on the developers app defined by [REDIRECT_PATH]. 
+Once the user has signed in they are redirected back to a page on the developers app defined by `[REDIRECT_PATH]`. 
 
 The provider should have included an oauth_callback parameter which was defined by //auth-server, this includes part of the path where the token can be returned for an access token. The total path response shall look something like this.
 
@@ -107,7 +107,7 @@ The provider should have included an oauth_callback parameter which was defined 
 	&oauth_token=abc12465
 
 
-The page you defined locally as the [REDIRECT_PATH], must then construct a call to //auth-server to exchange the unauthorized oauth_token for an access token. This would look like this...
+The page you defined locally as the `[REDIRECT_PATH]`, must then construct a call to //auth-server to exchange the unauthorized oauth_token for an access token. This would look like this...
 
 
 	?oauth_token=abc12465
@@ -134,12 +134,12 @@ The OAuth 1.0 API requires that each request is uniquely signed with the applica
 
 ### A simple GET Redirect
 
-To sign a request to [API_PATH], use the [access_token] returned in OAuth 1.0 above and send to the auth-server. 
+To sign a request to `[API_PATH]`, use the `[access_token]` returned in OAuth 1.0 above and send to the auth-server. 
 
 	?access_code=[ACCESS_CODE]
 	&path=[API_PATH]
 
-The oauth shim signs and redirects the requests to the [API_PATH] e.g.
+The oauth shim signs and redirects the requests to the `[API_PATH]` e.g.
 
 	[API_PATH]?oauth_token=asdf&oauth_consumer_key=asdf&...&oauth_signature=1234
 
