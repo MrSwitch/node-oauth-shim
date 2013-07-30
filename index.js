@@ -89,8 +89,7 @@ module.exports = new (function(){
 			};
 
 			//opts.body = post;
-
-			var req = ( request.protocol==='https' ? https : http ).request( request, function(res){
+			var req = ( request.protocol==='https:' ? https : http ).request( request, function(res){
 
 				var bits = "";
 				res.on('data', function (chunk) {
