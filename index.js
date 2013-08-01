@@ -3,6 +3,7 @@ var http = require('http');
 var url = require('url');
 //var hello_modules = require('./hello_modules.js');
 var oauth = require('./oauth.js');
+var qs = require('querystring');
 //var oa = require('oauth').OAuth;
 
 
@@ -72,7 +73,7 @@ module.exports = new (function(){
 
 			if(!response){
 				return callback({
-					error : "missing_credentials",
+					error : "required_credentials",
 					error_message  : "Could not find the credentials for signing this request, ensure that the correct client_id is passed"
 				});
 			}
@@ -91,7 +92,7 @@ module.exports = new (function(){
 
 			if(!grant_url){
 				return callback({
-					error : "missing_grant",
+					error : "required_grant",
 					error_message  : "Missing parameter grant_url"
 				});
 			}
@@ -119,8 +120,15 @@ module.exports = new (function(){
 					}
 				}
 
-				// Token
-				if("access_token" in data&&!("expires_in" in data)){
+				// Check responses
+				if(!("access_token" in data)&&!("error" in data)){
+					if(!data||typeof(data)!=='object'){
+						data = {};
+					}
+					data.error = "invalid_grant";
+					data.error_message = "Could not get a sensible response from the authenticating server, "+grant_url;
+				}
+				else if("access_token" in data&&!("expires_in" in data)){
 					data.expires_in = 3600;
 				}
 

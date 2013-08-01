@@ -117,7 +117,21 @@ describe('OAuth2 swap code ', function(){
 
 		request(app)
 			.get('/proxy?'+querystring.stringify(query))
-			.expect('Location', new RegExp( query.redirect_uri.replace(/\//g,'\\/') + '\\#error\\=missing_grant' ) )
+			.expect('Location', new RegExp( query.redirect_uri.replace(/\//g,'\\/') + '\\#error\\=required_grant' ) )
+			.expect(302)
+			.end(function(err, res){
+				if (err) throw err;
+				done();
+			});
+	});
+
+	it("should fail if the grant_url is invalid, and redirect back to redirect_uri", function(done){
+
+		query.grant_url = "http://localhost/";
+
+		request(app)
+			.get('/proxy?'+querystring.stringify(query))
+			.expect('Location', new RegExp( query.redirect_uri.replace(/\//g,'\\/') + '\\#error\\=invalid_grant' ) )
 			.expect(302)
 			.end(function(err, res){
 				if (err) throw err;
@@ -132,7 +146,7 @@ describe('OAuth2 swap code ', function(){
 
 		request(app)
 			.get('/proxy?'+querystring.stringify(query))
-			.expect('Location', new RegExp( query.redirect_uri.replace(/\//g,'\\/') + '\\#error\\=missing_credentials' ) )
+			.expect('Location', new RegExp( query.redirect_uri.replace(/\//g,'\\/') + '\\#error\\=required_credentials' ) )
 			.expect(302)
 			.end(function(err, res){
 				if (err) throw err;
