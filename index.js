@@ -107,21 +107,23 @@ module.exports = new (function(){
 			//opts.body = post;
 			request( r, post, function(err,res,body){
 
-				self.utils.log(body);
-				try{
-					data = JSON.parse(body);
-				}
-				catch(e){
+				if(body){
+					self.utils.log(body);
 					try{
-						data = self.utils.param(body.toString('utf8', 0, body.length));
+						data = JSON.parse(body);
 					}
-					catch(e2){
-						self.utils.log("Crap, grant response fubar'd");
+					catch(e){
+						try{
+							data = self.utils.param(body.toString('utf8', 0, body.length));
+						}
+						catch(e2){
+							self.utils.log("Crap, grant response fubar'd");
+						}
 					}
 				}
 
 				// Check responses
-				if(!("access_token" in data)&&!("error" in data)){
+				if(err||!body||(!("access_token" in data)&&!("error" in data))){
 					if(!data||typeof(data)!=='object'){
 						data = {};
 					}
