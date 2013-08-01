@@ -85,7 +85,7 @@ remoteServer.use('/oauth/grant', function(req,res){
 });
 
 
-describe('OAuth2 swap code ', function(){
+describe('OAuth2 exchanging code for token, ', function(){
 
 	var query = {};
 
@@ -127,7 +127,7 @@ describe('OAuth2 swap code ', function(){
 
 	it("should fail if the grant_url is invalid, and redirect back to redirect_uri", function(done){
 
-		query.grant_url = "http://localhost/";
+		query.grant_url = "http://localhost:5555";
 
 		request(app)
 			.get('/proxy?'+querystring.stringify(query))

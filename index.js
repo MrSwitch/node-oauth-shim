@@ -107,6 +107,8 @@ module.exports = new (function(){
 			//opts.body = post;
 			request( r, post, function(err,res,body){
 
+				var data = {};
+
 				if(body){
 					self.utils.log(body);
 					try{
@@ -128,7 +130,12 @@ module.exports = new (function(){
 						data = {};
 					}
 					data.error = "invalid_grant";
-					data.error_message = "Could not get a sensible response from the authenticating server, "+grant_url;
+					if(err){
+						data.error_message = "Could not find the authenticating server, "+grant_url;
+					}
+					else{
+						data.error_message = "Could not get a sensible response from the authenticating server, "+grant_url;
+					}
 				}
 				else if("access_token" in data&&!("expires_in" in data)){
 					data.expires_in = 3600;
