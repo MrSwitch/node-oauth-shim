@@ -87,12 +87,17 @@ remoteServer.use('/oauth/grant', function(req,res){
 
 describe('OAuth2 swap code ', function(){
 
-	var query = {
-		'grant_url' : 'http://localhost:3000/oauth/grant',
-		'code' : '123456',
-		'client_id' : 'client_id',
-		'redirect_uri' : 'http://localhost:3000/response'
-	};
+	var query = {};
+
+	beforeEach(function(){
+		query = {
+			'grant_url' : 'http://localhost:3000/oauth/grant',
+			'code' : '123456',
+			'client_id' : 'client_id',
+			'redirect_uri' : 'http://localhost:3000/response'
+		};
+	});
+
 
 	it("should return an access_token, and redirect back to redirect_uri", function(done){
 
@@ -101,7 +106,6 @@ describe('OAuth2 swap code ', function(){
 			.expect('Location', query.redirect_uri + '#' + oauth2codeExchange )
 			.expect(302)
 			.end(function(err, res){
-				console.log(err);
 				if (err) throw err;
 				done();
 			});
@@ -116,7 +120,21 @@ describe('OAuth2 swap code ', function(){
 			.expect('Location', new RegExp( query.redirect_uri.replace(/\//g,'\\/') + '\\#error\\=missing_grant' ) )
 			.expect(302)
 			.end(function(err, res){
-				console.log(err);
+				if (err) throw err;
+				done();
+			});
+	});
+
+
+	it("should fail if the client_secret could not be determined, and redirect back to redirect_uri", function(done){
+
+		delete query.client_id;
+
+		request(app)
+			.get('/proxy?'+querystring.stringify(query))
+			.expect('Location', new RegExp( query.redirect_uri.replace(/\//g,'\\/') + '\\#error\\=missing_credentials' ) )
+			.expect(302)
+			.end(function(err, res){
 				if (err) throw err;
 				done();
 			});

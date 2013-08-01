@@ -7,26 +7,25 @@ var oauth = require('./oauth.js');
 
 
 // Wrap HTTP/HTTPS
-function Request(req,data,callback){
+function request(req,data,callback){
 
-	var request = ( req.protocol==='https' ? https : http ).request( req, function(res){
+	var r = ( req.protocol==='https:' ? https : http ).request( req, function(res){
 		var buffer = '';
 		res.on('data', function(data){
 			buffer += data;
 		});
 		res.on('end', function(){
-			callback(buffer);
+			callback(null,res,buffer);
 		});
 	});
-	request.on('error', function(err){
+	r.on('error', function(err){
 		callback(err);
 	});
 	if(data){
-		request.write(data);
+		r.write(data);
 	}
-
-	request.end();
-	return request;
+	r.end();
+	return r;
 }
 
 
@@ -71,6 +70,13 @@ module.exports = new (function(){
 */
 		self.getCredentials( p.client_id || p.id, function(response){
 
+			if(!response){
+				return callback({
+					error : "missing_credentials",
+					error_message  : "Could not find the credentials for signing this request, ensure that the correct client_id is passed"
+				});
+			}
+
 			// Make the OAuth2 request
 			var post = self.utils.param({
 				code : p.code,
@@ -90,48 +96,36 @@ module.exports = new (function(){
 				});
 			}
 
-			var request = url.parse( grant_url );
-			request.method = 'POST';
-			request.headers = {
+			var r = url.parse( grant_url );
+			r.method = 'POST';
+			r.headers = {
 				'Content-length': post.length,
 				'Content-type':'application/x-www-form-urlencoded'
 			};
 
 			//opts.body = post;
-			var req = ( request.protocol==='https:' ? https : http ).request( request, function(res){
+			request( r, post, function(err,res,body){
 
-				var bits = "";
-				res.on('data', function (chunk) {
-					bits += chunk;
-				});
-				res.on('end', function () {
-
-					self.utils.log(bits);
+				self.utils.log(body);
+				try{
+					data = JSON.parse(body);
+				}
+				catch(e){
 					try{
-						data = JSON.parse(bits);
+						data = self.utils.param(body.toString('utf8', 0, body.length));
 					}
-					catch(e){
-						try{
-							data = self.utils.param(bits.toString('utf8', 0, bits.length));
-						}
-						catch(e2){
-							self.utils.log("Crap, grant response fubar'd");
-						}
+					catch(e2){
+						self.utils.log("Crap, grant response fubar'd");
 					}
+				}
 
-					// Token
-					if("access_token" in data&&!("expires_in" in data)){
-						data.expires_in = 3600;
-					}
+				// Token
+				if("access_token" in data&&!("expires_in" in data)){
+					data.expires_in = 3600;
+				}
 
-					callback(data);
-				});
+				callback(data);
 			});
-
-			self.utils.log( post );
-			req.write( post );
-
-			req.end();
 		});
 
 	};
@@ -261,20 +255,20 @@ module.exports = new (function(){
 
 		function proxy(method, path){
 			// Send HTTP request to new path
-			var request = url.parse(path);
+			var r = url.parse(path);
 
 			// define the method
-			request.method = method;
+			r.method = method;
 
 			onbufferready(function(buffer){
 
 				self.utils.log("RESPONSE-PROXY", path, buffer );
 
 				// buffer
-				Request(request, buffer, function(){
+				request(r, buffer, function(err,res,body){
 
 					// Respond
-					serveUp.apply(this, arguments);
+					serveUp(body);
 
 					// Send
 					self.utils.log("PROXY RESPONSE");
@@ -516,77 +510,69 @@ module.exports = new (function(){
 			var signed_url = oauth.sign( path, opts, client_secret, token_secret || null);
 
 			// Requst
-			var request = url.parse(signed_url);
+			var r = url.parse(signed_url);
 
 			self.utils.log("OAUTH-REQUEST-URL", signed_url);
 
 			// Make the call
-			( request.protocol==='https:' ? https : http ).get( request, function(r){
+			request( r, null, function(err,res,data){
 
-				var data = '';
-				r.on('data', function(chunk){
-					data += chunk;
-				});
+				if(err){
+					/////////////////////////////
+					// The server failed to respond
+					/////////////////////////////
+					return callback( p.redirect_uri, {
+						error : "server_error",
+						error_message : "Unable to connect to "+signed_url
+					});
+				}
 
-				r.on('end', function(){
+				self.utils.log("OAUTH-RESPONSE-DATA",data.toString(),res.statusCode);
 
-					self.utils.log("OAUTH-RESPONSE-DATA",data.toString(),r.statusCode);
+				var json = {};
+				try{
+					json = JSON.parse(data.toString());
+				}
+				catch(e){
+					json = self.utils.param(data.toString());
+				}
 
-					var json = {};
-					try{
-						json = JSON.parse(data.toString());
+				if(json.error||res.statusCode>=400){
+
+					// Error
+					if(!json.error){
+						//self.utils.log(json);
+						json = {error:json.oauth_problem||"401 could not authenticate"};
 					}
-					catch(e){
-						json = self.utils.param(data.toString());
-					}
+					callback( p.redirect_uri, json );
+				}
+				// Was this a preflight request
+				else if(!p.oauth_token){
+					// Step 1
 
-					if(json.error||r.statusCode>=400){
-
-						// Error
-						if(!json.error){
-							//self.utils.log(json);
-							json = {error:json.oauth_problem||"401 could not authenticate"};
-						}
-						callback( p.redirect_uri, json );
-					}
-					// Was this a preflight request
-					else if(!p.oauth_token){
-						// Step 1
-
-						// Store the oauth_token_secret
-						if(json.oauth_token_secret){
-							_token_secrets[json.oauth_token] = json.oauth_token_secret;
-						}
-
-						// Great redirect the user to authenticate
-						var url = (p.auth_url||p.oauth.auth);
-						callback( url + (url.indexOf('?')>-1?'&':'?') + self.utils.param({
-							oauth_token : json.oauth_token,
-							oauth_callback : oauth_callback
-						}) );
+					// Store the oauth_token_secret
+					if(json.oauth_token_secret){
+						_token_secrets[json.oauth_token] = json.oauth_token_secret;
 					}
 
-					else{
-						// Step 2
-						// Construct the access token to send back to the client
-						callback( p.redirect_uri, {
-							access_token : json.oauth_token +':'+json.oauth_token_secret+'@'+p.client_id,
-							state : p.state
-						});
-					}
+					// Great redirect the user to authenticate
+					var url = (p.auth_url||p.oauth.auth);
+					callback( url + (url.indexOf('?')>-1?'&':'?') + self.utils.param({
+						oauth_token : json.oauth_token,
+						oauth_callback : oauth_callback
+					}) );
+				}
 
-					return;
-				});
-			}).on('error', function(e) {
+				else{
+					// Step 2
+					// Construct the access token to send back to the client
+					callback( p.redirect_uri, {
+						access_token : json.oauth_token +':'+json.oauth_token_secret+'@'+p.client_id,
+						state : p.state
+					});
+				}
 
-				/////////////////////////////
-				// The server failed to respond
-				/////////////////////////////
-
-				callback( p.redirect_uri, {
-					error : "server_error",
-					error_message : "Unable to connect to "+signed_url
-				});
+				return;
 			});
 		});
 	};
