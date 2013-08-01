@@ -33,10 +33,14 @@ require('should');
 // SETUP SHIM LISTENING
 ////////////////////////////////
 
-//oauthshim.debug = true;
+oauthshim.debug = false;
 
 oauthshim.init({
-	'oauth_consumer_key' : 'oauth_consumer_secret'
+	// OAuth 1
+	'oauth_consumer_key' : 'oauth_consumer_secret',
+
+	// OAuth 2
+	'client_id' : 'client_secret'
 });
 
 
@@ -59,6 +63,65 @@ beforeEach(function(){
 // tests here
 afterEach(function(){
 	srv.close();
+});
+
+
+////////////////////////////////
+// TEST OAUTH2 SIGNING
+////////////////////////////////
+
+
+var oauth2codeExchange = querystring.stringify({
+	expires_in : 'expires_in',
+	access_token : 'access_token'
+});
+
+
+remoteServer.use('/oauth/grant', function(req,res){
+
+	res.writeHead(200);
+	res.write(oauth2codeExchange);
+	res.end();
+});
+
+
+describe('OAuth2 swap code ', function(){
+
+	var query = {
+		'grant_url' : 'http://localhost:3000/oauth/grant',
+		'code' : '123456',
+		'client_id' : 'client_id',
+		'redirect_uri' : 'http://localhost:3000/response'
+	};
+
+	it("should return an access_token, and redirect back to redirect_uri", function(done){
+
+		request(app)
+			.get('/proxy?'+querystring.stringify(query))
+			.expect('Location', query.redirect_uri + '#' + oauth2codeExchange )
+			.expect(302)
+			.end(function(err, res){
+				console.log(err);
+				if (err) throw err;
+				done();
+			});
+	});
+
+	it("should fail if the grant_url is missing, and redirect back to redirect_uri", function(done){
+
+		delete query.grant_url;
+
+		request(app)
+			.get('/proxy?'+querystring.stringify(query))
+			.expect('Location', new RegExp( query.redirect_uri.replace(/\//g,'\\/') + '\\#error\\=missing_grant' ) )
+			.expect(302)
+			.end(function(err, res){
+				console.log(err);
+				if (err) throw err;
+				done();
+			});
+	});
+	
 });
 
 

@@ -58,7 +58,7 @@ module.exports = new (function(){
 	this.login = function(p, callback){
 
 		// Take the obj and make a call to the server
-		if(	p.oauth.version === 1 ){
+		if(	p.oauth && p.oauth.version === 1 ){
 			return;
 		}
 
@@ -69,7 +69,6 @@ module.exports = new (function(){
 		opts.host = '127.0.0.1';
 		opts.port = 8888;
 */
-
 		self.getCredentials( p.client_id || p.id, function(response){
 
 			// Make the OAuth2 request
@@ -81,7 +80,17 @@ module.exports = new (function(){
 				redirect_uri : encodeURIComponent(p.redirect_uri)
 			}, function(r){return r;});
 
-			var request = url.parse( p.grant_url || p.oauth.grant );
+			// Get the grant_url
+			var grant_url = p.grant_url || p.grant || (p.oauth ? p.oauth.grant : false  );
+
+			if(!grant_url){
+				return callback({
+					error : "missing_grant",
+					error_message  : "Missing parameter grant_url"
+				});
+			}
+
+			var request = url.parse( grant_url );
 			request.method = 'POST';
 			request.headers = {
 				'Content-length': post.length,
@@ -108,6 +117,11 @@ module.exports = new (function(){
 						catch(e2){
 							self.utils.log("Crap, grant response fubar'd");
 						}
+					}
+
+					// Token
+					if("access_token" in data&&!("expires_in" in data)){
+						data.expires_in = 3600;
 					}
 
 					callback(data);
@@ -272,13 +286,16 @@ module.exports = new (function(){
 		//
 		// OAUTH2
 		//
-		if( p.code && p.state && p.redirect_uri ){
+		if( p.code && p.redirect_uri ){
 
 			self.login( p, function(response){
 
 				// Redirect page
 				// With the Auth response, we need to return it to the parent
-				redirect( p.redirect_uri, self.utils.merge({state:p.state, expires_in:3600}, response));
+				if(p.state){
+					response.state = p.state;
+				}
+				redirect( p.redirect_uri, response);
 				return;
 
 			});
