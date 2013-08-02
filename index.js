@@ -317,7 +317,7 @@ module.exports = new (function(){
 		//
 		// OAUTH1
 		//
-		else if( ( p.redirect_uri && p.oauth && parseInt(p.oauth.version,10) === 1 ) || ( p.token_url ) ){
+		else if( ( p.redirect_uri && p.oauth && parseInt(p.oauth.version,10) === 1 ) || p.token_url || p.oauth_token ){
 
 			self.location = url.parse("http"+(req.connection.encrypted?"s":'')+'://'+req.headers.host+req.url);
 
@@ -344,7 +344,6 @@ module.exports = new (function(){
 			self.getCredentials( token[3], function(client_secret){
 
 				if(client_secret){
-
 					path = oauth.sign( p.path, {
 						oauth_token: token[1],
 						oauth_consumer_key : token[3]
@@ -465,7 +464,15 @@ module.exports = new (function(){
 		if(!p.oauth_token){
 
 			// Change the path to be that of the intiial handshake
-			path = (p.request_url || p.oauth.request);
+			path = (p.request_url || (p.oauth?p.oauth.request:null));
+
+			if(!path){
+				return callback( p.redirect_uri, {
+					error : "required_request_url",
+					error_message : "A request_url is required"
+				});
+			}
+
 
 			//
 			// Create the URL of this service
@@ -492,13 +499,22 @@ module.exports = new (function(){
 		else{
 
 			//
-			// OAUTH 1: Step 2
+			// SECOND STEP
 			// The provider has provisioned a temporary token
 			//
 
 			// Change the path to be that of the Providers token exchange
-			path = p.token_url || p.oauth.token;
+			path = p.token_url || (p.oauth?p.oauth.token:null);
 
+			if(!path){
+				return callback( p.redirect_uri, {
+					error : "required_token_url",
+					error_message : "A token_url is required to authenticate the oauth_token"
+				});
+			}
+
+
+			// Check that there is a token
 			opts.oauth_token = p.oauth_token;
 			if(p.oauth_verifier){
 				opts.oauth_verifier = p.oauth_verifier;
@@ -506,6 +522,13 @@ module.exports = new (function(){
 
 			// Get secret from temp storage
 			token_secret = _token_secrets[p.oauth_token];
+
+			if(!token_secret){
+				return callback( p.redirect_uri, {
+					error : (!p.oauth_token?"required":"invalid")+"_oauth_token",
+					error_message : "The oauth_token "+ (!p.oauth_token?" is required":" was not recognised" )
+				});
+			}
 		}
 
 
@@ -517,8 +540,8 @@ module.exports = new (function(){
 
 			if(!client_secret){
 				callback( p.redirect_uri, {
-					error : "signature_invalid",
-					error_message : "The signature is not in correct format and not recognized by our system."
+					error : "invalid_credentials",
+					error_message : "Credientials were not recognised"
 				});
 				return;
 			}
@@ -559,10 +582,14 @@ module.exports = new (function(){
 					// Error
 					if(!json.error){
 						//self.utils.log(json);
-						json = {error:json.oauth_problem||"401 could not authenticate"};
+						json = {
+							error: json.oauth_problem|| "auth_failed",
+							error_message : res.statusCode + " could not authenticate"
+						};
 					}
 					callback( p.redirect_uri, json );
 				}
+
 				// Was this a preflight request
 				else if(!p.oauth_token){
 					// Step 1

@@ -191,24 +191,21 @@ remoteServer.use('/oauth/token', function(req,res){
 // TEST OAUTH SIGNING
 ////////////////////////////////
 
-describe('OAuthSign', function(){
+describe('OAuth authenticate', function(){
 
-	var signin_query = {
-		request_url : 'http://localhost:3000/oauth/request',
-		token_url : 'http://localhost:3000/oauth/token',
-		auth_url : 'http://localhost:3000/oauth/auth',
-		version : '1.0a',
-		state : '',
-		client_id : 'oauth_consumer_key',
-		redirect_uri : 'http://localhost:3000/'
-	};
+	var query = {};
 
-	var exchange_query = {
-		token_url : signin_query.token_url,
-		oauth_token : 'oauth_token',
-		redirect_uri : signin_query.redirect_uri,
-		client_id : signin_query.client_id
-	};
+	beforeEach(function(){
+		query = {
+			request_url : 'http://localhost:3000/oauth/request',
+			token_url : 'http://localhost:3000/oauth/token',
+			auth_url : 'http://localhost:3000/oauth/auth',
+			version : '1.0a',
+			state : '',
+			client_id : 'oauth_consumer_key',
+			redirect_uri : 'http://localhost:3000/'
+		};
+	});
 
 
 	it("should correctly sign a request", function(){
@@ -222,21 +219,70 @@ describe('OAuthSign', function(){
 	it("should redirect users to the path defined as `auth_url`", function(done){
 
 		request(app)
-			.get('/proxy?'+querystring.stringify(signin_query))
-			.expect('Location', new RegExp( signin_query.auth_url.replace(/\//g,'\\/') + '\\?oauth_token\\=oauth_token\\&oauth_callback\\=' + encodeURIComponent(signin_query.redirect_uri).replace(/\//g,'\\/') ) )
+			.get('/proxy?'+querystring.stringify(query))
+			.expect('Location', new RegExp( query.auth_url.replace(/\//g,'\\/') + '\\?oauth_token\\=oauth_token\\&oauth_callback\\=' + encodeURIComponent(query.redirect_uri).replace(/\//g,'\\/') ) )
 			.expect(302)
 			.end(function(err, res){
 				if (err) throw err;
 				done();
 			});
 	});
+
+	it("should return an #error if given a wrong request_url", function(done){
+
+		query.request_url = 'http://localhost:3000/oauth/brokenrequest';
+
+		request(app)
+			.get('/proxy?'+querystring.stringify(query))
+			.expect('Location', new RegExp( query.redirect_uri.replace(/\//g,'\\/') + '\\#error\\=.*' ) )
+			.expect(302)
+			.end(function(err, res){
+				if (err) throw err;
+				done();
+			});
+	});
+
+	it("should return an #error if request_url is missing", function(done){
+
+		delete query.request_url;
+
+		request(app)
+			.get('/proxy?'+querystring.stringify( query ))
+			.expect('Location', new RegExp( query.redirect_uri.replace(/\//g,'\\/') + '\\#error\\=.*' ) )
+			.expect(302)
+			.end(function(err, res){
+				if (err) throw err;
+				done();
+			});
+	});
+
+});
+
+
+////////////////////////////////
+// TEST OAUTH EXCHANGE TOKEN
+////////////////////////////////
+
+describe('OAuth exchange token', function(){
+
+	var query = {};
+
+	beforeEach(function(){
+		query = {
+			token_url : 'http://localhost:3000/oauth/token',
+			oauth_token : 'oauth_token',
+			redirect_uri : 'http://localhost:3000/',
+			client_id : 'oauth_consumer_key'
+		};
+	});
+
 
 	it("should exchange an oauth_token, and return an access_token", function(done){
 
 		request(app)
-			.get('/proxy?'+querystring.stringify(exchange_query))
-			.expect('Location', new RegExp( signin_query.redirect_uri.replace(/\//g,'\\/') + '\\#access_token\\=' +
-									encodeURIComponent('oauth_token:oauth_token_secret@'+signin_query.client_id) ) )
+			.get('/proxy?'+querystring.stringify(query))
+			.expect('Location', new RegExp( query.redirect_uri.replace(/\//g,'\\/') + '\\#access_token\\=' +
+									encodeURIComponent('oauth_token:oauth_token_secret@'+query.client_id) ) )
 			.expect(302)
 			.end(function(err, res){
 				if (err) throw err;
@@ -245,13 +291,13 @@ describe('OAuthSign', function(){
 	});
 
 
-	it("should return an #error if given a wrong request_url", function(done){
+	it("should return an #error if given an erroneous token_url", function(done){
 
-		signin_query.request_url = 'http://localhost:3000/oauth/brokenrequest';
+		query.token_url = 'http://localhost:3000/oauth/brokentoken';
 
 		request(app)
-			.get('/proxy?'+querystring.stringify(signin_query))
-			.expect('Location', new RegExp( signin_query.redirect_uri.replace(/\//g,'\\/') + '\\#error\\=.*' ) )
+			.get('/proxy?'+querystring.stringify(query))
+			.expect('Location', new RegExp( query.redirect_uri.replace(/\//g,'\\/') + '\\#error\\=.*' ) )
 			.expect(302)
 			.end(function(err, res){
 				if (err) throw err;
@@ -259,13 +305,27 @@ describe('OAuthSign', function(){
 			});
 	});
 
-	it("should return an #error if given a wrong token_url", function(done){
+	it("should return an #error if token_url is missing", function(done){
 
-		exchange_query.token_url = 'http://localhost:3000/oauth/brokentoken';
+		delete query.token_url;
 
 		request(app)
-			.get('/proxy?'+querystring.stringify(signin_query))
-			.expect('Location', new RegExp( signin_query.redirect_uri.replace(/\//g,'\\/') + '\\#error\\=.*' ) )
+			.get('/proxy?'+querystring.stringify(query))
+			.expect('Location', new RegExp( query.redirect_uri.replace(/\//g,'\\/') + '\\#error\\=required_token_url.*' ) )
+			.expect(302)
+			.end(function(err, res){
+				if (err) throw err;
+				done();
+			});
+	});
+
+	it("should return an #error if the oauth_token is wrong", function(done){
+
+		query.oauth_token = 'boom';
+
+		request(app)
+			.get('/proxy?'+querystring.stringify(query))
+			.expect('Location', new RegExp( query.redirect_uri.replace(/\//g,'\\/') + '\\#error\\=invalid_oauth_token.*' ) )
 			.expect(302)
 			.end(function(err, res){
 				if (err) throw err;
