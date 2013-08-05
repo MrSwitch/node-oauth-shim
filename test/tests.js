@@ -55,9 +55,10 @@ app.all('/proxy', oauthshim.request );
 
 var connect = require('connect');
 var remoteServer = connect(), srv;
+var test_port = 3333;
 
 beforeEach(function(){
-	srv = remoteServer.listen(3000);
+	srv = remoteServer.listen(test_port);
 });
 
 // tests here
@@ -85,16 +86,16 @@ remoteServer.use('/oauth/grant', function(req,res){
 });
 
 
-describe('OAuth2 exchanging code for token, ', function(){
+describe('OAuth2 exchanging code for token,', function(){
 
 	var query = {};
 
 	beforeEach(function(){
 		query = {
-			'grant_url' : 'http://localhost:3000/oauth/grant',
+			'grant_url' : 'http://localhost:'+test_port+'/oauth/grant',
 			'code' : '123456',
 			'client_id' : 'client_id',
-			'redirect_uri' : 'http://localhost:3000/response'
+			'redirect_uri' : 'http://localhost:'+test_port+'/response'
 		};
 	});
 
@@ -197,13 +198,13 @@ describe('OAuth authenticate', function(){
 
 	beforeEach(function(){
 		query = {
-			request_url : 'http://localhost:3000/oauth/request',
-			token_url : 'http://localhost:3000/oauth/token',
-			auth_url : 'http://localhost:3000/oauth/auth',
+			request_url : 'http://localhost:'+test_port+'/oauth/request',
+			token_url : 'http://localhost:'+test_port+'/oauth/token',
+			auth_url : 'http://localhost:'+test_port+'/oauth/auth',
 			version : '1.0a',
 			state : '',
 			client_id : 'oauth_consumer_key',
-			redirect_uri : 'http://localhost:3000/'
+			redirect_uri : 'http://localhost:'+test_port+'/'
 		};
 	});
 
@@ -230,7 +231,7 @@ describe('OAuth authenticate', function(){
 
 	it("should return an #error if given a wrong request_url", function(done){
 
-		query.request_url = 'http://localhost:3000/oauth/brokenrequest';
+		query.request_url = 'http://localhost:'+test_port+'/oauth/brokenrequest';
 
 		request(app)
 			.get('/proxy?'+querystring.stringify(query))
@@ -269,9 +270,9 @@ describe('OAuth exchange token', function(){
 
 	beforeEach(function(){
 		query = {
-			token_url : 'http://localhost:3000/oauth/token',
+			token_url : 'http://localhost:'+test_port+'/oauth/token',
 			oauth_token : 'oauth_token',
-			redirect_uri : 'http://localhost:3000/',
+			redirect_uri : 'http://localhost:'+test_port+'/',
 			client_id : 'oauth_consumer_key'
 		};
 	});
@@ -293,7 +294,7 @@ describe('OAuth exchange token', function(){
 
 	it("should return an #error if given an erroneous token_url", function(done){
 
-		query.token_url = 'http://localhost:3000/oauth/brokentoken';
+		query.token_url = 'http://localhost:'+test_port+'/oauth/brokentoken';
 
 		request(app)
 			.get('/proxy?'+querystring.stringify(query))
@@ -349,10 +350,18 @@ describe('OAuth exchange token', function(){
 // REMOTE SERVER API
 ////////////////////////////////
 
-
 remoteServer.use('/api/', function(req,res){
 
+	// If an Number is passed on the URL then return that number as the StatusCode
+	if( req.url.replace(/^\//,'') > 200 ){
+		res.writeHead(req.url.replace(/^\//,'')*1);
+		res.end();
+		return;
+	}
+
 	res.writeHead(200);
+
+//	console.log(req.headers);
 
 	var buf='';
 	req.on('data', function(data){
@@ -363,7 +372,7 @@ remoteServer.use('/api/', function(req,res){
 		////////////////////
 		// TAILOR THE RESPONSE TO MATCH THE REQUEST
 		////////////////////
-		res.write([req.method, buf].join('&'));
+		res.write([req.method, req.headers.header, buf].filter(function(a){return !!a;}).join('&'));
 		res.end();
 	});
 
@@ -372,7 +381,7 @@ remoteServer.use('/api/', function(req,res){
 
 
 // Test path
-var api_url = 'http://localhost:3000/api/',
+var api_url = 'http://localhost:'+test_port+'/api/',
 	access_token = 'token_key:token_secret@oauth_consumer_key';
 
 
@@ -382,7 +391,7 @@ var api_url = 'http://localhost:3000/api/',
 // TEST PROXY
 ////////////////////////////////
 
-describe('Proxying requests with a shimed access_token ', function(){
+describe('Proxying requests with a shimed access_token', function(){
 
 
 
@@ -455,7 +464,7 @@ describe('Proxying requests with a shimed access_token ', function(){
 	it("should correctly sign the path and proxy GET requests", function(done){
 		request(app)
 			.get('/proxy?then=proxy&access_token='+ access_token +'&path='+ api_url)
-			.expect("GET&")
+			.expect("GET")
 			.end(function(err, res){
 				if (err) throw err;
 				done();
@@ -463,6 +472,26 @@ describe('Proxying requests with a shimed access_token ', function(){
 	});
 
 	it("should correctly sign the path and proxy POST body", function(done){
+
+		request(app)
+			.post('/proxy?then=proxy&access_token='+ access_token +'&path='+ api_url)
+			.send("POST_DATA")
+			.expect('Access-Control-Allow-Origin', '*')
+			.expect("POST&POST_DATA")
+			.end(function(err, res){
+				if (err) throw err;
+				done();
+			});
+	});
+
+	it("should correctly sign the path and proxy POST asynchronously", function(done){
+
+		oauthshim.getCredentials = function(id, callback){
+			setTimeout(function(){
+				callback('oauth_consumer_secret');
+			}, 1000);
+		};
+
 		request(app)
 			.post('/proxy?then=proxy&access_token='+ access_token +'&path='+ api_url)
 			.send("POST_DATA")
@@ -477,7 +506,7 @@ describe('Proxying requests with a shimed access_token ', function(){
 
 
 
-describe("Proxying unsigned requests ", function(){
+describe("Proxying unsigned requests", function(){
 
 	///////////////////////////////
 	// PROXY REQUESTS - UNSIGNED
@@ -497,7 +526,7 @@ describe("Proxying unsigned requests ", function(){
 	it("should correctly proxy GET requests", function(done){
 		request(app)
 			.get('/proxy?then=proxy&path='+ api_url)
-			.expect("GET&")
+			.expect("GET")
 			.end(function(err, res){
 				if (err) throw err;
 				done();
@@ -516,11 +545,61 @@ describe("Proxying unsigned requests ", function(){
 			});
 	});
 
+	it("should correctly proxy multipart POST requests", function(done){
+		request(app)
+			.post('/proxy?then=proxy&path='+ api_url)
+			.attach("file", './test/tests.js')
+			.expect('Access-Control-Allow-Origin', '*')
+			.expect(/^POST\&(\-\-.*?)[\s\S]*(\1)\-\-$/)
+			.end(function(err, res){
+				if (err) throw err;
+				done();
+			});
+	});
+
+	it("should correctly pass through headers", function(done){
+		request(app)
+			.post('/proxy?then=proxy&path='+ api_url)
+			.set('header', 'header')
+			.expect('Access-Control-Allow-Origin', '*')
+			.expect("POST&header")
+			.end(function(err, res){
+				if (err) throw err;
+				done();
+			});
+	});
+
 	it("should correctly proxy DELETE requests", function(done){
 		request(app)
 			.del('/proxy?then=proxy&path='+ api_url)
 			.expect('Access-Control-Allow-Origin', '*')
-			.expect("DELETE&")
+			.expect("DELETE")
+			.end(function(err, res){
+				if (err) throw err;
+				done();
+			});
+	});
+
+	it("should handle invalid paths", function(done){
+		var fake_url = "http://localhost:45673/";
+		request(app)
+			.post('/proxy?then=proxy&path='+ fake_url)
+			.send("POST_DATA")
+			.expect('Access-Control-Allow-Origin', '*')
+			.expect(502)
+			.end(function(err, res){
+				if (err) throw err;
+				done();
+			});
+	});
+
+	it("should return server errors", function(done){
+
+		request(app)
+			.post('/proxy?then=proxy&path='+ api_url + "401" )
+			.send("POST_DATA")
+			.expect('Access-Control-Allow-Origin', '*')
+			.expect(401)
 			.end(function(err, res){
 				if (err) throw err;
 				done();

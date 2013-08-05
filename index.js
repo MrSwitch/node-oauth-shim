@@ -1,15 +1,16 @@
+// y
 var https = require('https');
 var http = require('http');
 var url = require('url');
 //var hello_modules = require('./hello_modules.js');
 var oauth = require('./oauth.js');
 var qs = require('querystring');
+var proxy = require('./proxy');
 //var oa = require('oauth').OAuth;
 
 
 // Wrap HTTP/HTTPS
 function request(req,data,callback){
-
 	var r = ( req.protocol==='https:' ? https : http ).request( req, function(res){
 		var buffer = '';
 		res.on('data', function(data){
@@ -206,38 +207,6 @@ module.exports = new (function(){
 		self.utils.log("REQUEST", p);
 
 		//
-		// Buffer the request BODY
-		// This is user for proxying requests
-		var buffer = '', buffer_end=false, buffer_funcs=[];
-
-		function onbufferready(func){
-			if(typeof(func)==='function'){
-				if(buffer_end){
-					func();
-				}
-				else{
-					buffer_funcs.push(func);
-				}
-			}
-			else{
-				buffer_end = true;
-				buffer_funcs.forEach(function(func){
-					func(buffer);
-				});
-				buffer_funcs.length=0;
-			}
-		}
-
-		req.on('data', function(data){
-			buffer+=data;
-		});
-		req.on('end', function(){
-			// Serve any pending actions
-			onbufferready();
-		});
-
-
-		//
 		// Process, pass the request the to be processed,
 		// The returning function contains the data to be sent
 		function redirect(path, hash){
@@ -268,29 +237,6 @@ module.exports = new (function(){
 
 			res.writeHead(200, { 'Access-Control-Allow-Origin':'*' });
 			res.end( body ,"utf8");
-		}
-
-		function proxy(method, path){
-			// Send HTTP request to new path
-			var r = url.parse(path);
-
-			// define the method
-			r.method = method;
-
-			onbufferready(function(buffer){
-
-				self.utils.log("RESPONSE-PROXY", path, buffer );
-
-				// buffer
-				request(r, buffer, function(err,res,body){
-
-					// Respond
-					serveUp(body);
-
-					// Send
-					self.utils.log("PROXY RESPONSE");
-				});
-			});
 		}
 
 
@@ -381,8 +327,10 @@ module.exports = new (function(){
 					serveUp(path);
 				}
 				else{
-					// Forward the whole request through a proxy
-					proxy( p.method ? p.method.toUpperCase() : req.method, path );
+					var options = url.parse(path);
+					options.method = p.method ? p.method.toUpperCase() : req.method;
+					options.headers = req.headers;
+					proxy( req, options, res );
 				}
 			});
 
@@ -422,7 +370,11 @@ module.exports = new (function(){
 			}
 			else{
 				// Forward the whole request through a proxy
-				proxy( p.method ? p.method.toUpperCase() : req.method, p.path );
+				// New request options
+				var options = url.parse(p.path);
+				options.method = p.method ? p.method.toUpperCase() : req.method;
+				options.headers = req.headers;
+				proxy( req, options, res );
 			}
 		}
 	};
