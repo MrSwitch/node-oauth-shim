@@ -1,15 +1,20 @@
-// y
+//
+// Node-OAuth-Shim
+// A RESTful API for interacting with OAuth1 and 2 services.
+//
+// @author Andrew Dodson
+// @since July 2013
+
 var https = require('https');
 var http = require('http');
 var url = require('url');
-//var hello_modules = require('./hello_modules.js');
-var oauth = require('./oauth.js');
 var qs = require('querystring');
-var proxy = require('./proxy');
-//var oa = require('oauth').OAuth;
+
+var oauth = require('./oauth.js');
+var proxy = require('./proxy.js');
 
 
-// Wrap HTTP/HTTPS
+// Wrap HTTP/HTTPS calls
 function request(req,data,callback){
 	var r = ( req.protocol==='https:' ? https : http ).request( req, function(res){
 		var buffer = '';
@@ -31,7 +36,9 @@ function request(req,data,callback){
 }
 
 
-// Set our API object as exportablee
+
+//
+// Export a new instance of the API
 module.exports = new (function(){
 
 	// Add the modules
@@ -240,6 +247,7 @@ module.exports = new (function(){
 		}
 
 
+
 		//
 		// OAUTH2
 		//
@@ -287,6 +295,10 @@ module.exports = new (function(){
 			var token = p.access_token.match(/^([^:]+)\:([^@]+)@(.+)$/);
 			var path = p.path;
 
+
+			// errr
+			var buffer = proxy.buffer(req);
+
 			self.getCredentials( token[3], function(client_secret){
 
 				if(client_secret){
@@ -329,8 +341,10 @@ module.exports = new (function(){
 				else{
 					var options = url.parse(path);
 					options.method = p.method ? p.method.toUpperCase() : req.method;
-					options.headers = req.headers;
-					proxy( req, options, res );
+
+					//
+					// Proxy
+					proxy.proxy(req, res, options, buffer);
 				}
 			});
 
@@ -373,8 +387,10 @@ module.exports = new (function(){
 				// New request options
 				var options = url.parse(p.path);
 				options.method = p.method ? p.method.toUpperCase() : req.method;
-				options.headers = req.headers;
-				proxy( req, options, res );
+
+				//
+				// Proxy
+				proxy.proxy(req, res, options);
 			}
 		}
 	};

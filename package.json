@@ -1,6 +1,6 @@
 {
   "name": "oauth-shim",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "OAuth2 shim for OAuth1 services, works with the clientside library HelloJS",
   "main": "index.js",
   "scripts": {
@@ -13,7 +13,8 @@
   "keywords": [
     "oauth",
     "oauth-proxy",
-    "oauth-shim"
+    "oauth-shim",
+    "rest"
   ],
   "author": "Andrew Dodson <andrewjdodson@gmail.com>",
   "license": "BSD",

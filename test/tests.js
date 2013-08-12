@@ -494,9 +494,9 @@ describe('Proxying requests with a shimed access_token', function(){
 
 		request(app)
 			.post('/proxy?then=proxy&access_token='+ access_token +'&path='+ api_url)
-			.send("POST_DATA")
+			.attach("file", './test/tests.js')
 			.expect('Access-Control-Allow-Origin', '*')
-			.expect("POST&POST_DATA")
+			.expect(/^POST\&(\-\-.*?)[\s\S]*(\1)\-\-$/)
 			.end(function(err, res){
 				if (err) throw err;
 				done();
