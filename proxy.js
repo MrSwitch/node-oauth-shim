@@ -69,7 +69,8 @@ exports.proxy = function(req, res, options, buffer){
 
 		res.writeHead(502, {
 			'Content-Type': 'text/plain',
-			'Access-Control-Allow-Origin': '*'
+			'Access-Control-Allow-Origin': '*',
+			'Access-Control-Allow-Methods' : 'OPTIONS, TRACE, GET, HEAD, POST, PUT'
 		});
 
 		if (req.method !== 'HEAD') {
@@ -77,12 +78,10 @@ exports.proxy = function(req, res, options, buffer){
 			//
 			// This NODE_ENV=production behavior is mimics Express and
 			// Connect.
-			if (process.env.NODE_ENV === 'production') {
-				res.write('Internal Server Error');
-			}
-			else {
-				res.write('An error has occurred: ' + JSON.stringify(err));
-			}
+			//if (process.env.NODE_ENV === 'production') {
+			//	res.write('Internal Server Error');
+			//}
+			res.write(JSON.stringify({error:err}));
 		}
 
 		try { res.end(); }
@@ -168,6 +167,7 @@ exports.proxy = function(req, res, options, buffer){
 		Object.keys(_res.headers).forEach(function (key) {
 			res.setHeader(key, _res.headers[key]);
 		});
+		res.setHeader("Access-Control-Allow-Methods", 'OPTIONS, TRACE, GET, HEAD, POST, PUT');
 		res.setHeader("Access-Control-Allow-Origin", "*");
 		
 		res.writeHead(_res.statusCode);
