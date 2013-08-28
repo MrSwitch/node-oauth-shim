@@ -105,6 +105,8 @@ module.exports = new (function(){
 				});
 			}
 
+			self.utils.log("OAUTH2-GRANT-REQUEST", grant_url, post);
+
 			var r = url.parse( grant_url );
 			r.method = 'POST';
 			r.headers = {
