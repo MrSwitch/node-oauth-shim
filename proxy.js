@@ -53,6 +53,22 @@ exports.proxy = function(req, res, options, buffer){
 
 
 	///////////////////////////////////
+	// Preflight request
+	///////////////////////////////////
+
+	if( options.method.toUpperCase() === 'OPTIONS' ){
+		res.writeHead(204, "no content", {
+			'access-control-allow-origin': '*',
+//			'Access-Control-Max-Age': 3600, // seconds
+			'access-control-allow-headers': req.headers["access-control-request-headers"],
+			'access-control-allow-methods' : 'OPTIONS, TRACE, GET, HEAD, POST, PUT',
+			'content-length' : 0
+		});
+		return res.end();
+	}
+
+
+	///////////////////////////////////
 	// Define error handler
 	///////////////////////////////////
 	function proxyError(err) {
@@ -167,8 +183,8 @@ exports.proxy = function(req, res, options, buffer){
 		Object.keys(_res.headers).forEach(function (key) {
 			res.setHeader(key, _res.headers[key]);
 		});
-		res.setHeader("Access-Control-Allow-Methods", 'OPTIONS, TRACE, GET, HEAD, POST, PUT');
-		res.setHeader("Access-Control-Allow-Origin", "*");
+		res.setHeader("access-control-allow-methods", 'OPTIONS, TRACE, GET, HEAD, POST, PUT');
+		res.setHeader("access-control-allow-origin", "*");
 		
 		res.writeHead(_res.statusCode);
 
