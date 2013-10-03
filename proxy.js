@@ -201,9 +201,19 @@ exports.proxy = function(req, res, options, buffer){
 		res.setHeader("access-control-allow-methods", 'OPTIONS, TRACE, GET, HEAD, POST, PUT');
 		res.setHeader("access-control-allow-origin", "*");
 		
-		res.writeHead(_res.statusCode);
+		//
+		// StatusCode
+		// Should we supress error codes
+		//
+		var suppress_response_codes = url.parse(req.url, true).query.suppress_response_codes;
+
+		// Overwrite the nasty ones
+		res.writeHead( suppress_response_codes ? 200 : _res.statusCode );
 
 
+		//
+		// Data
+		//
 		_res.on('data', function (chunk, encoding) {
 			if (res.writable) {
 				// Only pause if the underlying buffers are full,
