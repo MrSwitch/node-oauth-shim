@@ -71,7 +71,7 @@ exports.proxy = function(req, res, options, buffer){
 	// Preflight request
 	///////////////////////////////////
 
-	if( options.method.toUpperCase() === 'OPTIONS' ){
+	if( req.method.toUpperCase() === 'OPTIONS' ){
 		res.writeHead(204, "no content", {
 			'access-control-allow-origin': '*',
 //			'Access-Control-Max-Age': 3600, // seconds
