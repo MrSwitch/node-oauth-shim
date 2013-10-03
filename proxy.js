@@ -12,6 +12,21 @@ var https=require('https');
 var EventEmitter=require('events').EventEmitter;
 
 var request = function(opts, callback){
+
+	/*
+	// Use fiddler?
+	opts.path = (opts.protocol === 'https:'? "https" : "http" ) + '://' + opts.host + (opts.port?':' + opts.port:'') + opts.path;
+	if(!opts.headers){
+		opts.headers = {};
+	}
+	opts.headers.host = opts.host;
+	opts.host = '127.0.0.1';
+//	opts.host = 'localhost';
+	opts.port = 8888;
+//	opts.protocol = null;
+
+	/**/
+
 	var req = (opts.protocol === 'https:'? https : http ).request(opts, callback);
 	return req;
 };
@@ -236,7 +251,8 @@ exports.proxy = function(req, res, options, buffer){
 			return;
 		}
 
-		var flushed = _req.write(chunk, encoding);
+		// Writing chunk data doesn not require an encoding parameter
+		var flushed = _req.write(chunk);
 
 		if (flushed){
 			return;
@@ -315,7 +331,7 @@ exports.buffer = function (obj) {
 		},
 		resume: function () {
 			this.end();
-			for (var i = 0, len = events.length; i < len; ++i) {
+			for (var i = 0, len = events.length; i < len; i++) {
 				obj.emit.apply(obj, events[i]);
 			}
 		}
