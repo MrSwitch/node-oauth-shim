@@ -169,3 +169,22 @@ Add a JSONP callback function and override the method. E.g.
 	&then=return
 	&method=post
 	&callback=myJSONP
+
+
+## Contributing
+
+Don't forget to run the tests. 
+
+	# Install the test dependencies.
+
+	npm install -l
+
+	# Run the tests, continuously
+
+	npm test
+
+	# Single
+
+	mocha test
+
+
