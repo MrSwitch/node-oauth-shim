@@ -82,7 +82,8 @@ module.exports = new (function(){
 			if(!response){
 				return callback({
 					error : "required_credentials",
-					error_message  : "Could not find the credentials for signing this request, ensure that the correct client_id is passed"
+					error_message  : "Could not find the credentials for signing this request, ensure that the correct client_id is passed",
+					state : p.state || ''
 				});
 			}
 
@@ -101,7 +102,8 @@ module.exports = new (function(){
 			if(!grant_url){
 				return callback({
 					error : "required_grant",
-					error_message  : "Missing parameter grant_url"
+					error_message  : "Missing parameter grant_url",
+					state : p.state || ''
 				});
 			}
 
@@ -149,6 +151,10 @@ module.exports = new (function(){
 				}
 				else if("access_token" in data&&!("expires_in" in data)){
 					data.expires_in = 3600;
+				}
+
+				if(p.state){
+					data.state = p.state || '';
 				}
 
 				callback(data);
@@ -260,7 +266,7 @@ module.exports = new (function(){
 				// Redirect page
 				// With the Auth response, we need to return it to the parent
 				if(p.state){
-					response.state = p.state;
+					response.state = p.state || '';
 				}
 				redirect( p.redirect_uri, response);
 				return;
@@ -439,7 +445,8 @@ module.exports = new (function(){
 			if(!path){
 				return callback( p.redirect_uri, {
 					error : "required_request_url",
-					error_message : "A request_url is required"
+					error_message : "A request_url is required",
+					state : p.state || ''
 				});
 			}
 
@@ -451,7 +458,7 @@ module.exports = new (function(){
 			// Callback
 			var oauth_callback = p.redirect_uri + (p.redirect_uri.indexOf('?')>-1?'&':'?') + self.utils.param({
 				proxy_url : self.location.protocol + '//'+ self.location.host + self.location.pathname,
-				state     : p.state,
+				state     : p.state || '',
 				token_url : p.token_url || p.oauth.token,
 				client_id : p.client_id
 			}, function(r){
@@ -479,7 +486,8 @@ module.exports = new (function(){
 			if(!path){
 				return callback( p.redirect_uri, {
 					error : "required_token_url",
-					error_message : "A token_url is required to authenticate the oauth_token"
+					error_message : "A token_url is required to authenticate the oauth_token",
+					state : p.state || ''
 				});
 			}
 
@@ -496,7 +504,8 @@ module.exports = new (function(){
 			if(!token_secret){
 				return callback( p.redirect_uri, {
 					error : (!p.oauth_token?"required":"invalid")+"_oauth_token",
-					error_message : "The oauth_token "+ (!p.oauth_token?" is required":" was not recognised" )
+					error_message : "The oauth_token "+ (!p.oauth_token?" is required":" was not recognised" ),
+					state : p.state || ''
 				});
 			}
 		}
@@ -511,7 +520,8 @@ module.exports = new (function(){
 			if(!client_secret){
 				callback( p.redirect_uri, {
 					error : "invalid_credentials",
-					error_message : "Credientials were not recognised"
+					error_message : "Credientials were not recognised",
+					state : p.state || ''
 				});
 				return;
 			}
@@ -533,7 +543,8 @@ module.exports = new (function(){
 					/////////////////////////////
 					return callback( p.redirect_uri, {
 						error : "server_error",
-						error_message : "Unable to connect to "+signed_url
+						error_message : "Unable to connect to "+signed_url,
+						state : p.state || ''
 					});
 				}
 
@@ -554,7 +565,8 @@ module.exports = new (function(){
 						//self.utils.log(json);
 						json = {
 							error: json.oauth_problem|| "auth_failed",
-							error_message : res.statusCode + " could not authenticate"
+							error_message : res.statusCode + " could not authenticate",
+							state : p.state || ''
 						};
 					}
 					callback( p.redirect_uri, json );
@@ -582,7 +594,7 @@ module.exports = new (function(){
 					// Construct the access token to send back to the client
 					callback( p.redirect_uri, {
 						access_token : json.oauth_token +':'+json.oauth_token_secret+'@'+p.client_id,
-						state : p.state
+						state : p.state || ''
 					});
 				}
 

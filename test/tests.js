@@ -74,7 +74,8 @@ afterEach(function(){
 
 var oauth2codeExchange = querystring.stringify({
 	expires_in : 'expires_in',
-	access_token : 'access_token'
+	access_token : 'access_token',
+	state : 'state'
 });
 
 
@@ -95,10 +96,18 @@ describe('OAuth2 exchanging code for token,', function(){
 			'grant_url' : 'http://localhost:'+test_port+'/oauth/grant',
 			'code' : '123456',
 			'client_id' : 'client_id',
-			'redirect_uri' : 'http://localhost:'+test_port+'/response'
+			'redirect_uri' : 'http://localhost:'+test_port+'/response',
+			'state' : "state"
 		};
 	});
 
+	function redirect_uri(o){
+		var hash = [];
+		for(var x in o){
+			hash.push(x + '=' + o[x]);
+		}
+		return new RegExp( query.redirect_uri.replace(/\//g,'\\/') + '#' + hash.join('&') );
+	}
 
 	it("should return an access_token, and redirect back to redirect_uri", function(done){
 
@@ -118,7 +127,11 @@ describe('OAuth2 exchanging code for token,', function(){
 
 		request(app)
 			.get('/proxy?'+querystring.stringify(query))
-			.expect('Location', new RegExp( query.redirect_uri.replace(/\//g,'\\/') + '\\#error\\=required_grant' ) )
+			.expect('Location', redirect_uri({
+				error : 'required_grant',
+				error_message : '([^&]+)',
+				state: query.state
+			}))
 			.expect(302)
 			.end(function(err, res){
 				if (err) throw err;
@@ -132,7 +145,11 @@ describe('OAuth2 exchanging code for token,', function(){
 
 		request(app)
 			.get('/proxy?'+querystring.stringify(query))
-			.expect('Location', new RegExp( query.redirect_uri.replace(/\//g,'\\/') + '\\#error\\=invalid_grant' ) )
+			.expect('Location', redirect_uri({
+				error : 'invalid_grant',
+				error_message : '([^&]+)',
+				state: query.state
+			}))
 			.expect(302)
 			.end(function(err, res){
 				if (err) throw err;
@@ -147,7 +164,11 @@ describe('OAuth2 exchanging code for token,', function(){
 
 		request(app)
 			.get('/proxy?'+querystring.stringify(query))
-			.expect('Location', new RegExp( query.redirect_uri.replace(/\//g,'\\/') + '\\#error\\=required_credentials' ) )
+			.expect('Location', redirect_uri({
+				error : 'required_credentials',
+				error_message : '([^&]+)',
+				state: query.state
+			}))
 			.expect(302)
 			.end(function(err, res){
 				if (err) throw err;
@@ -208,6 +229,14 @@ describe('OAuth authenticate', function(){
 		};
 	});
 
+	function redirect_uri(o){
+		var hash = [];
+		for(var x in o){
+			hash.push(x + '=' + o[x]);
+		}
+		return new RegExp( query.redirect_uri.replace(/\//g,'\\/') + '#' + hash.join('&') );
+	}
+
 
 	it("should correctly sign a request", function(){
 		var callback = 'http://location.com/?wicked=knarly&redirect_uri='+
@@ -235,7 +264,11 @@ describe('OAuth authenticate', function(){
 
 		request(app)
 			.get('/proxy?'+querystring.stringify(query))
-			.expect('Location', new RegExp( query.redirect_uri.replace(/\//g,'\\/') + '\\#error\\=.*' ) )
+			.expect('Location', redirect_uri({
+				error : 'auth_failed',
+				error_message : '([^&]+)',
+				state : query.state
+			}))
 			.expect(302)
 			.end(function(err, res){
 				if (err) throw err;
@@ -243,13 +276,35 @@ describe('OAuth authenticate', function(){
 			});
 	});
 
-	it("should return an #error if request_url is missing", function(done){
+	it("should return an Error 'server_error' if given a wrong domain", function(done){
+
+		query.request_url = 'http://localhost:'+(test_port+1)+'/wrongdomain';
+
+		request(app)
+			.get('/proxy?'+querystring.stringify(query))
+			.expect('Location', redirect_uri({
+				error : 'server_error',
+				error_message : '([^&]+)',
+				state : query.state
+			}))
+			.expect(302)
+			.end(function(err, res){
+				if (err) throw err;
+				done();
+			});
+	});
+
+	it("should return Error 'required_request_url' if request_url is missing", function(done){
 
 		delete query.request_url;
 
 		request(app)
 			.get('/proxy?'+querystring.stringify( query ))
-			.expect('Location', new RegExp( query.redirect_uri.replace(/\//g,'\\/') + '\\#error\\=.*' ) )
+			.expect('Location', redirect_uri({
+				error : 'required_request_url',
+				error_message : '([^&]+)',
+				state : query.state
+			}))
 			.expect(302)
 			.end(function(err, res){
 				if (err) throw err;
@@ -273,17 +328,27 @@ describe('OAuth exchange token', function(){
 			token_url : 'http://localhost:'+test_port+'/oauth/token',
 			oauth_token : 'oauth_token',
 			redirect_uri : 'http://localhost:'+test_port+'/',
-			client_id : 'oauth_consumer_key'
+			client_id : 'oauth_consumer_key',
+			state : 'state'
 		};
 	});
+
+	function redirect_uri(o){
+		var hash = [];
+		for(var x in o){
+			hash.push(x + '=' + o[x]);
+		}
+		return new RegExp( query.redirect_uri.replace(/\//g,'\\/') + '#' + hash.join('&') );
+	}
 
 
 	it("should exchange an oauth_token, and return an access_token", function(done){
 
 		request(app)
 			.get('/proxy?'+querystring.stringify(query))
-			.expect('Location', new RegExp( query.redirect_uri.replace(/\//g,'\\/') + '\\#access_token\\=' +
-									encodeURIComponent('oauth_token:oauth_token_secret@'+query.client_id) ) )
+			.expect('Location', redirect_uri({
+				access_token : encodeURIComponent('oauth_token:oauth_token_secret@'+query.client_id)
+			}))
 			.expect(302)
 			.end(function(err, res){
 				if (err) throw err;
@@ -298,7 +363,11 @@ describe('OAuth exchange token', function(){
 
 		request(app)
 			.get('/proxy?'+querystring.stringify(query))
-			.expect('Location', new RegExp( query.redirect_uri.replace(/\//g,'\\/') + '\\#error\\=.*' ) )
+			.expect('Location', redirect_uri({
+				error : 'auth_failed',
+				error_message : '([^&]+)',
+				state : query.state
+			}))
 			.expect(302)
 			.end(function(err, res){
 				if (err) throw err;
@@ -312,7 +381,11 @@ describe('OAuth exchange token', function(){
 
 		request(app)
 			.get('/proxy?'+querystring.stringify(query))
-			.expect('Location', new RegExp( query.redirect_uri.replace(/\//g,'\\/') + '\\#error\\=required_token_url.*' ) )
+			.expect('Location', redirect_uri({
+				error : 'required_token_url',
+				error_message : '([^&]+)',
+				state : query.state
+			}))
 			.expect(302)
 			.end(function(err, res){
 				if (err) throw err;
@@ -326,7 +399,11 @@ describe('OAuth exchange token', function(){
 
 		request(app)
 			.get('/proxy?'+querystring.stringify(query))
-			.expect('Location', new RegExp( query.redirect_uri.replace(/\//g,'\\/') + '\\#error\\=invalid_oauth_token.*' ) )
+			.expect('Location', redirect_uri({
+				error : 'invalid_oauth_token',
+				error_message : '([^&]+)',
+				state : query.state
+			}))
 			.expect(302)
 			.end(function(err, res){
 				if (err) throw err;
@@ -557,6 +634,7 @@ describe("Proxying unsigned requests", function(){
 			});
 	});
 
+	/*
 	it("should correctly pass through headers", function(done){
 		request(app)
 			.post('/proxy?then=proxy&path='+ api_url)
@@ -567,7 +645,7 @@ describe("Proxying unsigned requests", function(){
 				if (err) throw err;
 				done();
 			});
-	});
+	}); */
 
 	it("should correctly proxy DELETE requests", function(done){
 		request(app)
