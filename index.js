@@ -427,11 +427,31 @@ module.exports = new (function(){
 		//
 		// p = self.utils.merge(services[p.network], p);
 		var	path,
-			token_secret = null;
+			token_secret;
 
 		var opts = {
 			oauth_consumer_key : p.client_id
 		};
+
+
+		//
+		// Refresh token?
+		// Does this include an access token?
+		if(p.access_token){
+			// Disect access_token
+			var token = p.access_token.match(/^([^:]+)\:([^@]+)@(.+)$/);
+			if(token){
+
+				// Assign the token
+				p.oauth_token = token[0];
+				token_secret = token[1];
+
+				// Grap the refresh token and add it to the opts if it exists.
+				if(p.refresh_token){
+					opts.oauth_session_handle = p.refresh_token;
+				}
+			}
+		}
 
 		//
 		// OAUTH 1: FIRST STEP
@@ -498,9 +518,13 @@ module.exports = new (function(){
 				opts.oauth_verifier = p.oauth_verifier;
 			}
 
+			// If token secret has not been supplied by an access_token in case of a refresh
 			// Get secret from temp storage
-			token_secret = _token_secrets[p.oauth_token];
+			if(!token_secret&&p.oauth_token in _token_secrets){
+				token_secret = _token_secrets[p.oauth_token];
+			}
 
+			// If no secret is given, panic
 			if(!token_secret){
 				return callback( p.redirect_uri, {
 					error : (!p.oauth_token?"required":"invalid")+"_oauth_token",
@@ -573,7 +597,7 @@ module.exports = new (function(){
 				}
 
 				// Was this a preflight request
-				else if(!p.oauth_token){
+				else if(!opts.oauth_token){
 					// Step 1
 
 					// Store the oauth_token_secret
@@ -592,10 +616,32 @@ module.exports = new (function(){
 				else{
 					// Step 2
 					// Construct the access token to send back to the client
-					callback( p.redirect_uri, {
-						access_token : json.oauth_token +':'+json.oauth_token_secret+'@'+p.client_id,
-						state : p.state || ''
-					});
+					json.access_token = json.oauth_token +':'+json.oauth_token_secret+'@'+p.client_id;
+					json.state = p.state || '';
+
+					delete json.oauth_token;
+					delete json.oauth_token_secret;
+
+					// Optionally return the refresh_token and expires_in if given
+					if(json.oauth_expires_in){
+						json.expires_in = json.oauth_expires_in;
+						delete json.oauth_expires_in;
+					}
+
+					// Optionally standarize any refresh token
+					if(json.oauth_session_handle){
+						json.refresh_token = json.oauth_session_handle;
+						delete json.oauth_session_handle;
+
+						if(json.oauth_authorization_expires_in){
+							json.refresh_expires_in = json.oauth_authorization_expires_in;
+							delete json.oauth_authorization_expires_in;
+						}
+					}
+
+					// Return the entire response object to the client
+					// Often included is ID's, name etc which can save additional requests
+					callback( p.redirect_uri, json );
 				}
 
 				return;
