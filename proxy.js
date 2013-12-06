@@ -75,13 +75,22 @@ exports.proxy = function(req, res, options, buffer){
 	///////////////////////////////////
 
 	if( req.method.toUpperCase() === 'OPTIONS' ){
-		res.writeHead(204, "no content", {
+
+		// Response headers
+		var obj = {
 			'access-control-allow-origin': '*',
-//			'Access-Control-Max-Age': 3600, // seconds
-			'access-control-allow-headers': req.headers["access-control-request-headers"],
-			'access-control-allow-methods' : 'OPTIONS, TRACE, GET, HEAD, POST, PUT',
+			'access-control-allow-methods' : 'OPTIONS, TRACE, GET, HEAD, POST, PUT, DELETE',
 			'content-length' : 0
-		});
+//			'Access-Control-Max-Age': 3600, // seconds
+		};
+
+		// Return any headers the client has specified
+		if(req.headers["access-control-request-headers"]){
+			obj['access-control-allow-headers'] = req.headers["access-control-request-headers"];
+		}
+
+		res.writeHead(204, "no content", obj);
+
 		return res.end();
 	}
 
