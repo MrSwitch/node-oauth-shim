@@ -574,6 +574,13 @@ module.exports = new (function(){
 
 				self.utils.log("OAUTH-RESPONSE-DATA",data.toString(),res.statusCode);
 
+				// http://developer.yahoo.com/oauth/guide/oauth-accesstoken.html
+				// TODO: Not sure, but for some reason, this 'extra' string (A%3D or A=) comes up in OAUTH-RESPONSE-DATA, and messes up the next steps, mainly the access_token gets cut-off at 'A'
+				// Removing it doesn't seem to cause any problems. Is is either a bug in Yahoo OAuth, or this string is not required.
+				// The documentation actually shows that A%3D is the start of the oauth_response, but doesn't explain why such seemingly URL character %3D is included in token?
+				data= data.replace('=A%3D', '=');
+				self.utils.log("OAUTH-RESPONSE-DATA-PATCH", "After removing =A%3D from oauth_token", data.toString());
+
 				var json = {};
 				try{
 					json = JSON.parse(data.toString());
