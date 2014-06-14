@@ -179,6 +179,49 @@ describe('OAuth2 exchanging code for token,', function(){
 });
 
 
+// /////////////////////////////
+// OAuth2 Excahange refresh_token for access_token
+// /////////////////////////////
+
+describe('OAuth2 exchange refresh_token for access token', function(){
+
+	var query = {};
+
+	beforeEach(function(){
+		query = {
+			'grant_url' : 'http://localhost:'+test_port+'/oauth/grant',
+			'refresh_token' : '123456',
+			'client_id' : 'client_id',
+			'redirect_uri' : 'http://localhost:'+test_port+'/response',
+			'state' : "state"
+		};
+	});
+
+	function redirect_uri(o){
+		var hash = [];
+		for(var x in o){
+			hash.push(x + '=' + o[x]);
+		}
+		return new RegExp( query.redirect_uri.replace(/\//g,'\\/') + '#' + hash.join('&') );
+	}
+
+	it("should redirect back to redirect_uri with an access_token and refresh_token", function(done){
+
+		request(app)
+			.get('/proxy?'+querystring.stringify(query))
+			.expect('Location', query.redirect_uri + '#' + oauth2codeExchange+"&refresh_token=123456" )
+			.expect(302)
+			.end(function(err, res){
+				if (err) throw err;
+				done();
+			});
+	});
+	
+});
+
+
+
+
 ////////////////////////////////
 // REMOTE SERVER AUTHENTICATION
 ////////////////////////////////

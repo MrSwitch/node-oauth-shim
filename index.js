@@ -88,13 +88,24 @@ module.exports = new (function(){
 			}
 
 			// Make the OAuth2 request
-			var post = self.utils.param({
-				code : p.code,
-				client_id : p.client_id || p.id,
-				client_secret : response,
-				grant_type : 'authorization_code',
-				redirect_uri : encodeURIComponent(p.redirect_uri)
-			}, function(r){return r;});
+			var post = null;
+			if(p.code){
+				post = {
+					code : p.code,
+					client_id : p.client_id || p.id,
+					client_secret : response,
+					grant_type : 'authorization_code',
+					redirect_uri : encodeURIComponent(p.redirect_uri)
+				};
+			}
+			else if(p.refresh_token){
+				post = {
+					refresh_token : p.refresh_token,
+					client_id : p.client_id || p.id,
+					client_secret : response,
+					grant_type : 'refresh_token',
+				};
+			}
 
 			// Get the grant_url
 			var grant_url = p.grant_url || p.grant || (p.oauth ? p.oauth.grant : false  );
@@ -109,6 +120,10 @@ module.exports = new (function(){
 
 			self.utils.log("OAUTH2-GRANT-REQUEST", grant_url, post);
 
+			// Convert the post object literal to a string
+			post = self.utils.param(post, function(r){return r;});
+
+			// Create the request
 			var r = url.parse( grant_url );
 			r.method = 'POST';
 			r.headers = {
@@ -155,6 +170,11 @@ module.exports = new (function(){
 
 				if(p.state){
 					data.state = p.state || '';
+				}
+
+				// If the refresh token was on the original request lets return it.
+				if( p.refresh_token && !data.refresh_token ){
+					data.refresh_token = p.refresh_token;
 				}
 
 				callback(data);
@@ -259,7 +279,7 @@ module.exports = new (function(){
 		//
 		// OAUTH2
 		//
-		if( p.code && p.redirect_uri ){
+		if( ( p.code || p.refresh_token ) && p.redirect_uri ){
 
 			self.login( p, function(response){
 
