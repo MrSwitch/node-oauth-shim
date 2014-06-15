@@ -727,4 +727,18 @@ describe("Proxying unsigned requests", function(){
 			});
 	});
 
+
+	it("should return a JSON error object if absent path parameter", function(done){
+
+		request(app)
+			.post('/proxy')
+			.expect('Access-Control-Allow-Origin', '*')
+			.expect(200)
+			.end(function(err, res){
+				var obj = JSON.parse(res.text);
+				if( obj.error.code !== "invalid_request" ) throw new Error("Not failing gracefully");
+				done();
+			});
+	});
+
 });

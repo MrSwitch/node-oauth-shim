@@ -264,8 +264,15 @@ module.exports = new (function(){
 
 		function serveUp(body){
 
+			if(typeof(body)==='object'){
+				body = JSON.stringify(body, null, 2);
+			}
+			else if(typeof(body)==='string'&&p.callback){
+				body = "'"+body+"'";
+			}
+
 			if(p.callback){
-				body = p.callback + "('" + body + "')";
+				body = p.callback + "(" + body + ")";
 			}
 
 			self.utils.log("RESPONSE-SERVE", body );
@@ -378,7 +385,7 @@ module.exports = new (function(){
 
 			return;
 		}
-		else{
+		else if(p.path){
 
 			// Define Default Handler
 			// Has the user specified the handler
@@ -420,6 +427,14 @@ module.exports = new (function(){
 				// Proxy
 				proxy.proxy(req, res, options);
 			}
+		}
+		else{
+			serveUp({
+				error : {
+					code : 'invalid_request',
+					message : 'The request is unrecognised'
+				}
+			});
 		}
 	};
 
