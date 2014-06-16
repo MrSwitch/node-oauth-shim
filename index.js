@@ -614,7 +614,12 @@ module.exports = new (function(){
 					json = JSON.parse(data.toString());
 				}
 				catch(e){
-					json = self.utils.param(data.toString());
+					try{
+						json = self.utils.param(data.toString());
+					}
+					catch(ee){
+						console.log("ERROR", "REQUEST: "+signed_url, "RESPONSE: "+data.toString() );
+					}
 				}
 
 				if(json.error||res.statusCode>=400){
