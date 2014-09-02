@@ -324,24 +324,10 @@ module.exports = new (function(){
 		//
 		else if( p.access_token && p.path ){
 
-			//
-			// The access_token is of the format which can be decomposed
-			//
-			var token = p.access_token.match(/^([^:]+)\:([^@]+)@(.+)$/);
-			var path = p.path;
-
-
 			// errr
 			var buffer = proxy.buffer(req);
 
-			self.getCredentials( token[3], function(client_secret){
-
-				if(client_secret){
-					path = oauth.sign( p.path, {
-						oauth_token: token[1],
-						oauth_consumer_key : token[3]
-					}, client_secret, token[2], null, (p.method||req.method).toUpperCase(), p.data?JSON.parse(p.data):null);
-				}
+			self.sign( (p.method||req.method), p.path, p.data, p.access_token, function( path ){
 
 				// Define Default Handler
 				// Has the user specified the handler
@@ -436,6 +422,32 @@ module.exports = new (function(){
 				}
 			});
 		}
+	};
+
+
+	//
+	// Sign path
+	//
+	this.sign = function( method, path, data, token, callback ){
+
+		token = token.match(/^([^:]+)\:([^@]+)@(.+)$/);
+
+		if(!token){
+			callback(path);
+		}
+		
+		this.getCredentials( token[3], function( client_secret ){
+
+			if(client_secret){
+				path = oauth.sign( path, {
+					oauth_token: token[1],
+					oauth_consumer_key : token[3]
+				}, client_secret, token[2], null, method.toUpperCase(), data?JSON.parse(data):null);
+			}
+
+			callback(path);
+
+		});
 	};
 
 
