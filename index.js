@@ -579,7 +579,7 @@ module.exports = new (function(){
 			if(!client_secret){
 				callback( p.redirect_uri, {
 					error : "invalid_credentials",
-					error_message : "Credientials were not recognised",
+					error_message : "Credentials were not recognised",
 					state : p.state || ''
 				});
 				return;
