@@ -1,6 +1,6 @@
 {
   "name": "oauth-shim",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "OAuth2 shim for OAuth1 services, works with the clientside library HelloJS",
   "main": "index.js",
   "scripts": {
