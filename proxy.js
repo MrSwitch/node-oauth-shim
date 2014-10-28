@@ -67,12 +67,22 @@ exports.proxy = function(req, res, options, buffer){
 		options.headers['content-length'] = req.headers['content-length'] || '0';
 	}
 
-	if (options.method === 'POST') {
+	if (options.method === 'POST'||options.method === 'PUT') {
 		if (!options.headers) {
 			options.headers = {};
 		}
 		options.headers['content-type'] = req.headers['content-type'];
 	}
+
+
+	// Loop through all req.headers
+	for( var header in req.headers ){
+		// Is this a custom header?
+		if(header.match(/^x-/i)){
+			options.headers[header] = req.headers[header];
+		}
+	}
+
 
 	options.agent = false;
 
