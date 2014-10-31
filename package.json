@@ -28,6 +28,7 @@
     "should": ">= 0.0.0",
     "express": "*",
     "connect": "*",
-    "supertest": "*"
+    "supertest": "*",
+    "mocha": "^2.0.1"
   }
 }
