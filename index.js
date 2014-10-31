@@ -81,7 +81,7 @@ module.exports = new (function(){
 
 			if(!response){
 				return callback({
-					error : "required_credentials",
+					error : ( (p.client_id || p.id) ? "invalid" : "required" ) + "_credentials",
 					error_message  : "Could not find the credentials for signing this request, ensure that the correct client_id is passed",
 					state : p.state || ''
 				});
@@ -590,7 +590,7 @@ module.exports = new (function(){
 
 			if(!client_secret){
 				callback( p.redirect_uri, {
-					error : "invalid_credentials",
+					error : ( p.client_id ? "invalid" : "required" ) + "_credentials",
 					error_message : "Credentials were not recognised",
 					state : p.state || ''
 				});

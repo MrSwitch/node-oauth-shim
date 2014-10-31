@@ -158,7 +158,7 @@ describe('OAuth2 exchanging code for token,', function(){
 	});
 
 
-	it("should fail if the client_secret could not be determined, and redirect back to redirect_uri", function(done){
+	it("should error with required_credentials if the client_id was not provided", function(done){
 
 		delete query.client_id;
 
@@ -166,6 +166,24 @@ describe('OAuth2 exchanging code for token,', function(){
 			.get('/proxy?'+querystring.stringify(query))
 			.expect('Location', redirect_uri({
 				error : 'required_credentials',
+				error_message : '([^&]+)',
+				state: query.state
+			}))
+			.expect(302)
+			.end(function(err, res){
+				if (err) throw err;
+				done();
+			});
+	});
+
+	it("should error with invalid_credentials if the supplied client_id had no associated client_secret", function(done){
+
+		query.client_id = "unrecognised";
+
+		request(app)
+			.get('/proxy?'+querystring.stringify(query))
+			.expect('Location', redirect_uri({
+				error : 'invalid_credentials',
 				error_message : '([^&]+)',
 				state: query.state
 			}))
@@ -354,6 +372,44 @@ describe('OAuth authenticate', function(){
 				done();
 			});
 	});
+
+
+	it("should error with required_credentials if the client_id was not provided", function(done){
+
+		delete query.client_id;
+
+		request(app)
+			.get('/proxy?'+querystring.stringify(query))
+			.expect('Location', redirect_uri({
+				error : 'required_credentials',
+				error_message : '([^&]+)',
+				state: query.state
+			}))
+			.expect(302)
+			.end(function(err, res){
+				if (err) throw err;
+				done();
+			});
+	});
+
+	it("should error with invalid_credentials if the supplied client_id had no associated client_secret", function(done){
+
+		query.client_id = "unrecognised";
+
+		request(app)
+			.get('/proxy?'+querystring.stringify(query))
+			.expect('Location', redirect_uri({
+				error : 'invalid_credentials',
+				error_message : '([^&]+)',
+				state: query.state
+			}))
+			.expect(302)
+			.end(function(err, res){
+				if (err) throw err;
+				done();
+			});
+	});
+	
 
 });
 
