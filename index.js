@@ -428,12 +428,21 @@ module.exports = new (function(){
 	//
 	// Sign path
 	//
-	this.sign = function( method, path, data, token, callback ){
+	this.sign = function( method, path, data, access_token, callback ){
 
-		token = token.match(/^([^:]+)\:([^@]+)@(.+)$/);
+		var token = access_token.match(/^([^:]+)\:([^@]+)@(.+)$/);
 
 		if(!token){
-			callback(path);
+
+			// If the access_token exists, append it too the path
+			if( access_token ){
+				path = this.utils.qs(path, {
+					access_token : access_token
+				});
+			}
+
+			callback( path );
+			return;
 		}
 		
 		this.getCredentials( token[3], function( client_secret ){
@@ -765,6 +774,23 @@ module.exports = new (function(){
 
 				return a.join('&');
 			}
+		},
+
+		// Append the querystring to a url
+		// @param string url
+		// @param object parameters
+		qs : function(url, params){
+			if(params){
+				var reg;
+				for(var x in params){
+					if(url.indexOf(x)>-1){
+						var str = "[\\?\\&]"+x+"=[^\\&]*";
+						reg = new RegExp(str);
+						url = url.replace(reg,'');
+					}
+				}
+			}
+			return url + (!this.empty(params) ? ( url.indexOf('?') > -1 ? "&" : "?" ) + this.param(params) : '');
 		},
 
 

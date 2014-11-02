@@ -535,6 +535,8 @@ remoteServer.use('/api/', function(req,res){
 		return;
 	}
 
+	res.setHeader('x-test-url', req.url);
+	res.setHeader('x-test-method', req.method);
 	res.writeHead(200);
 
 //	console.log(req.headers);
@@ -684,9 +686,23 @@ describe('Proxying requests with a shimed access_token', function(){
 
 describe("Proxying unsigned requests", function(){
 
+	var access_token = 'token';
+
 	///////////////////////////////
 	// PROXY REQUESTS - UNSIGNED
 	///////////////////////////////
+
+	it("should append the access_token to the path - if it does not conform to an OAuth1 token, and needs not be signed", function( done ){
+		request(app)
+			.get('/proxy?then=proxy&access_token='+ access_token +'&path='+ api_url)
+			.expect("GET")
+			.expect("x-test-url", /access_token\=token/ )
+			.end(function(err, res){
+				if (err) throw err;
+				done();
+			});
+	});
+
 
 	it("should correctly return a 302 redirection", function(){
 
