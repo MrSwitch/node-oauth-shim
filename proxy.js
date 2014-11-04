@@ -60,17 +60,15 @@ exports.proxy = function(req, res, options, buffer){
 		}
 	}
 
+	if(!options.headers){
+		options.headers = {};
+	}
+
 	if (options.method === 'DELETE') {
-		if(!options.headers){
-			options.headers = {};
-		}
 		options.headers['content-length'] = req.headers['content-length'] || '0';
 	}
 
 	if (options.method === 'POST'||options.method === 'PUT') {
-		if (!options.headers) {
-			options.headers = {};
-		}
 		options.headers['content-type'] = req.headers['content-type'];
 	}
 

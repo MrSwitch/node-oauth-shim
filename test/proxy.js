@@ -95,6 +95,17 @@ describe("Proxying unsigned requests", function(){
 			});
 	});
 
+	it("with a GET request and x-headers", function(done){
+		request(app)
+			.get('/proxy?path=' + api_url)
+			.set('x-custom-header','custom-header')
+			.expect('GET&')
+			.end(function(err, res){
+				if (err) throw err;
+				done();
+			});
+	});
+
 	it("with a POST request", function(done){
 		request(app)
 			.post('/proxy?path=' + api_url)
