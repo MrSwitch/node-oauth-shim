@@ -1,4 +1,5 @@
 # OAuth-shim
+[![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/MrSwitch/node-oauth-shim?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 This node module provides a "shim" service for clientside web apps adopting serverside OAuth2 or OAuth1 authentication but fighting to keep it all the browser, and shims the tedious dog legging through servers that has become OAuth1's curse.
 
 
