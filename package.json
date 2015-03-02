@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "should": ">= 0.0.0",
+    "expect.js" : "*",
     "express": "*",
     "connect": "*",
     "supertest": "*",

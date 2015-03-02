@@ -1,7 +1,5 @@
-var proxy = require('../proxy'),
+var proxy = require('../src/proxy'),
 	url = require('url');
-
-require('should');
 
 // Setup a test server
 var request = require('supertest'),

@@ -11,7 +11,7 @@
 // Dependiencies
 ////////////////////////////////
 
-var oauth = require('../oauth'),
+var sign = require('../src/sign'),
 	oauthshim = require('../index'),
 	querystring = require('querystring'),
 	fs = require('fs'),
@@ -20,13 +20,9 @@ var oauth = require('../oauth'),
 
 // Setup a test server
 var request = require('supertest'),
+	expect = require('expect.js'),
 	express = require('express');
 var app = express();
-
-// include this adds 'should' to all javascript objects...
-// Indeed i too thought extending native objects was bad
-// ... where there's a way there's a will!
-require('should');
 
 
 ////////////////////////////////
@@ -58,6 +54,7 @@ var remoteServer = connect(), srv;
 var test_port = 3333;
 
 beforeEach(function(){
+	oauthshim.onauthorization = null;
 	srv = remoteServer.listen(test_port);
 });
 
@@ -118,6 +115,20 @@ describe('OAuth2 exchanging code for token,', function(){
 			.end(function(err, res){
 				if (err) throw err;
 				done();
+			});
+	});
+
+	it("should trigger the listener on authorization", function(done){
+
+		oauthshim.onauthorization = function(session){
+			expect( session ).to.have.property('access_token');
+			done();
+		};
+
+		request(app)
+			.get('/proxy?'+querystring.stringify(query))
+			.end(function(err, res){
+				if (err) throw err;
 			});
 	});
 
@@ -234,7 +245,21 @@ describe('OAuth2 exchange refresh_token for access token', function(){
 				done();
 			});
 	});
-	
+
+
+	it("should trigger on authorization handler", function(done){
+
+		oauthshim.onauthorization = function(session){
+			expect( session ).to.have.property('access_token');
+			done();
+		};
+
+		request(app)
+			.get('/proxy?'+querystring.stringify(query))
+			.end(function(err, res){
+				if (err) throw err;
+			});
+	});
 });
 
 
@@ -303,8 +328,8 @@ describe('OAuth authenticate', function(){
 		var callback = 'http://location.com/?wicked=knarly&redirect_uri='+
 					encodeURIComponent("http://local.knarly.com/hello.js/redirect.html"+
 						"?state="+encodeURIComponent(JSON.stringify({proxy:"http://localhost"})));
-		var sign = oauth.sign('https://api.dropbox.com/1/oauth/request_token', {'oauth_consumer_key':'t5s644xtv7n4oth', 'oauth_callback':callback}, 'h9b3uri43axnaid', '', '1354345524');
-		sign.should.equal("https://api.dropbox.com/1/oauth/request_token?oauth_callback=http%3A%2F%2Flocation.com%2F%3Fwicked%3Dknarly%26redirect_uri%3Dhttp%253A%252F%252Flocal.knarly.com%252Fhello.js%252Fredirect.html%253Fstate%253D%25257B%252522proxy%252522%25253A%252522http%25253A%25252F%25252Flocalhost%252522%25257D&oauth_consumer_key=t5s644xtv7n4oth&oauth_nonce=1354345524&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1354345524&oauth_version=1.0&oauth_signature=7hCq53%2Bcl5PBpKbCa%2FdfMtlGkS8%3D");
+		var signed = sign('https://api.dropbox.com/1/oauth/request_token', {'oauth_consumer_key':'t5s644xtv7n4oth', 'oauth_callback':callback}, 'h9b3uri43axnaid', '', '1354345524');
+		expect( signed ).to.equal("https://api.dropbox.com/1/oauth/request_token?oauth_callback=http%3A%2F%2Flocation.com%2F%3Fwicked%3Dknarly%26redirect_uri%3Dhttp%253A%252F%252Flocal.knarly.com%252Fhello.js%252Fredirect.html%253Fstate%253D%25257B%252522proxy%252522%25253A%252522http%25253A%25252F%25252Flocalhost%252522%25257D&oauth_consumer_key=t5s644xtv7n4oth&oauth_nonce=1354345524&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1354345524&oauth_version=1.0&oauth_signature=7hCq53%2Bcl5PBpKbCa%2FdfMtlGkS8%3D");
 	});
 
 	it("should redirect users to the path defined as `auth_url`", function(done){
@@ -452,6 +477,22 @@ describe('OAuth exchange token', function(){
 			.end(function(err, res){
 				if (err) throw err;
 				done();
+			});
+	});
+
+
+	it("should trigger on authorization handler", function(done){
+
+		oauthshim.onauthorization = function( session ){
+			expect( session ).to.have.property( 'access_token' );
+			done();
+		};
+
+		request(app)
+			.get('/proxy?'+querystring.stringify(query))
+			.expect(302)
+			.end(function(err, res){
+				if (err) throw err;
 			});
 	});
 
@@ -672,7 +713,7 @@ describe('Proxying requests with a shimed access_token', function(){
 
 		request(app)
 			.post('/proxy?then=proxy&access_token='+ access_token +'&path='+ api_url)
-			.attach("file", './test/tests.js')
+			.attach("file", './package.json')
 			.expect('Access-Control-Allow-Origin', '*')
 			.expect(/^POST\&(\-\-.*?)[\s\S]*(\1)\-\-$/)
 			.end(function(err, res){
@@ -740,7 +781,7 @@ describe("Proxying unsigned requests", function(){
 	it("should correctly proxy multipart POST requests", function(done){
 		request(app)
 			.post('/proxy?then=proxy&path='+ api_url)
-			.attach("file", './test/tests.js')
+			.attach("file", './package.json')
 			.expect('Access-Control-Allow-Origin', '*')
 			.expect(/^POST\&(\-\-.*?)[\s\S]*(\1)\-\-$/)
 			.end(function(err, res){
