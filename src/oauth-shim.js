@@ -27,17 +27,11 @@ var services = {};
 
 //
 // Export a new instance of the API
-module.exports = function( req, res ){
-	return module.exports.request( req, res );
+module.exports = function( req, res, next ){
+	return module.exports.request( req, res, next );
 };
 
 
-// Debug flag
-module.exports.debug = false;
-
-
-// Define the empty function to be called when a users signs in.
-module.exports.onauthorization = null;
 
 
 // Set pretermined client-id's and client-secret
@@ -49,11 +43,27 @@ module.exports.init = function(obj){
 
 //
 // Request
-// Defines the callback from the server listener
-module.exports.request = function(req,res){
+// Compose all the default operations of this component
+//
+module.exports.request = function( req, res, next ){
 
 	var self = module.exports;
 
+	return self.interpret( req, res,
+			self.proxy.bind( self, req, res,
+			self.redirect.bind( self, req, res,
+			self.unhandled.bind( self, req, res, next ) ) ) );
+};
+
+
+
+//
+// Interpret the oauth login
+// Append data to the request object to hand over to the 'redirect' handler
+//
+module.exports.interpret = function( req, res, next ){
+
+	var self = module.exports;
 
 	// if the querystring includes
 	// An authentication "code",
@@ -69,51 +79,12 @@ module.exports.request = function(req,res){
 		p = merge( p, JSON.parse(p.state) );
 		p.state = state; // set this back to the string
 	}
-	catch(e){
-	}
+	catch(e){}
 
-	log("REQUEST", p);
-
-	//
-	// Process, pass the request the to be processed,
-	// The returning function contains the data to be sent
-	function redirect(path, hash){
-
-		// Overwrite intercept
-		if("interceptRedirect" in self){
-			self.interceptRedirect(path,hash);
-		}
-
-		var url = path + (hash ? '#'+ param( hash ) : '');
-
-		log("REDIRECT", url );
-
-		res.writeHead(302, {
-			'Access-Control-Allow-Origin':'*',
-			'Location': url
-		} );
-		res.end();
-	}
-
-	function serveUp(body){
-
-		if(typeof(body)==='object'){
-			body = JSON.stringify(body, null, 2);
-		}
-		else if(typeof(body)==='string'&&p.callback){
-			body = "'"+body+"'";
-		}
-
-		if(p.callback){
-			body = p.callback + "(" + body + ")";
-		}
-
-		log("RESPONSE-SERVE", body );
-
-		res.writeHead(200, { 'Access-Control-Allow-Origin':'*' });
-		res.end( body ,"utf8");
-	}
-
+	// Define the options
+	req.oauthshim = {
+		options : p
+	};
 
 
 	//
@@ -123,20 +94,16 @@ module.exports.request = function(req,res){
 
 		login( p, oauth2, function( session ){
 
-			// trigger the authentication
-			if( session && "access_token" in session && self.onauthorization){
-				self.onauthorization( session );
-			}
-
 			// Redirect page
 			// With the Auth response, we need to return it to the parent
 			if(p.state){
 				session.state = p.state || '';
 			}
-			redirect( p.redirect_uri, session );
-			return;
 
+			// OAuth Login
+			redirect( req, p.redirect_uri, session, next );
 		});
+
 		return;
 	}
 
@@ -148,127 +115,106 @@ module.exports.request = function(req,res){
 
 		p.location = url.parse("http"+(req.connection.encrypted?"s":'')+'://'+req.headers.host+req.url);
 
-		login( p, oauth1, function( path, hash ){
-
-			// trigger the authentication
-			if( hash && "access_token" in hash && self.onauthorization){
-				self.onauthorization( hash );
-			}
-
-			redirect( path, hash );
+		login( p, oauth1, function(path, session){
+			redirect( req, path, session, next );
 		});
 
 
 		return;
 	}
+
+	// Move on
+	else if(next){
+		next();
+	}
+
+};
+
+
+
+
+//
+// Proxy
+// Signs/Relays requests
+//
+module.exports.proxy = function(req, res, next){
+
+	var p = param(url.parse(req.url).search);
+
 
 	//
 	// SUBSEQUENT SIGNING OF REQUESTS
 	// Previously we've been preoccupoed with handling OAuth authentication/
 	// However OAUTH1 also needs every request to be signed.
 	//
-	else if( p.access_token && p.path ){
+	if( p.access_token && p.path ){
 
 		// errr
 		var buffer = proxy.buffer(req);
 
-		signRequest( (p.method||req.method), p.path, p.data, p.access_token, function( path ){
-
-			// Define Default Handler
-			// Has the user specified the handler
-			// determine the default`
-			if(!p.then){
-				if(req.method==='GET'){
-					if(!p.method||p.method.toUpperCase()==='GET'){
-						// Change the location
-						p.then = 'redirect';
-					}
-					else{
-						// return the signed path
-						p.then = 'return';
-					}
-				}
-				else{
-					// proxy the request through this server
-					p.then = 'proxy';
-				}
-			}
-
-
-			//
-			if(p.then==='redirect'){
-				// redirect the users browser to the new path
-				redirect(path);
-			}
-			else if(p.then==='return'){
-				// redirect the users browser to the new path
-				serveUp(path);
-			}
-			else{
-				var options = url.parse(path);
-				options.method = p.method ? p.method.toUpperCase() : req.method;
-
-				//
-				// Proxy
-				proxy.proxy(req, res, options, buffer);
-			}
-		});
+		signRequest( (p.method||req.method), p.path, p.data, p.access_token, proxyHandler.bind(null, req, res, next, p, buffer) );
 
 		return;
 	}
 	else if(p.path){
 
-		// Define Default Handler
-		// Has the user specified the handler
-		// determine the default`
-		if(!p.then){
-			if(req.method==='GET'){
-				if(!p.method||p.method.toUpperCase()==='GET'){
-					// Change the location
-					p.then = 'redirect';
-				}
-				else{
-					// return the signed path
-					p.then = 'return';
-				}
-			}
-			else{
-				// proxy the request through this server
-				p.then = 'proxy';
-			}
-		}
+		proxyHandler( req, res, next, p, undefined, p.path );
 
-
-		//
-		if(p.then==='redirect'){
-			// redirect the users browser to the new path
-			redirect(p.path);
-		}
-		else if(p.then==='return'){
-			// redirect the users browser to the new path
-			serveUp(p.path);
-		}
-		else{
-			// Forward the whole request through a proxy
-			// New request options
-			var options = url.parse(p.path);
-			options.method = p.method ? p.method.toUpperCase() : req.method;
-
-			//
-			// Proxy
-			proxy.proxy(req, res, options);
-		}
+		return;
 	}
-	else{
-		serveUp({
-			error : {
-				code : 'invalid_request',
-				message : 'The request is unrecognised'
-			}
-		});
+
+	else if( next ){
+		next();
 	}
 };
 
+
+
+//
+// Redirect Request
+// Is this request marked for redirect?
+//
+module.exports.redirect = function( req, res, next ){
+
+	var self = module.exports;
+
+	if( req.oauthshim && req.oauthshim.redirect ){
+
+		var hash = req.oauthshim.data;
+		var path = req.oauthshim.redirect;
+
+		path += ( hash ? '#'+ param( hash ) : '' );
+
+		res.writeHead( 302, {
+			'Access-Control-Allow-Origin':'*',
+			'Location': path
+		});
+
+		res.end();
+	}
+	else if(next){
+		next();
+	}
+};
+
+
+
+//
+// unhandled
+// What to return if the request was previously unhandled
+// 
+module.exports.unhandled = function( req, res, next ){
+
+	var p = param(url.parse(req.url).search);
+
+	serveUp( res, {
+		error : {
+			code : 'invalid_request',
+			message : 'The request is unrecognised'
+		}
+	}, p.callback );
+
+};
 
 
 
@@ -350,15 +296,83 @@ function signRequest( method, path, data, access_token, callback ){
 
 
 
-// Log activity
-function log(){
-	if(!module.exports.debug){
-		return;
-	}
-	var args = Array.prototype.slice.call(arguments);
-	for(var i=0;i<args.length;i++){
-		console.log("============");
-		console.log(args[i]);
+//
+// Process, pass the request the to be processed,
+// The returning function contains the data to be sent
+function redirect(req, path, hash, next){
+
+	req.oauthshim = req.oauthshim || {};
+	req.oauthshim.data = hash;
+	req.oauthshim.redirect = path;
+
+	if( next ){
+		next();
 	}
 }
 
+
+//
+// Serve Up 
+//
+
+function serveUp(res, body, jsonp_callback){
+
+	if(typeof(body)==='object'){
+		body = JSON.stringify(body, null, 2);
+	}
+	else if(typeof(body)==='string'&&jsonp_callback){
+		body = "'"+body+"'";
+	}
+
+	if(jsonp_callback){
+		body = jsonp_callback + "(" + body + ")";
+	}
+
+	res.writeHead(200, { 'Access-Control-Allow-Origin':'*' });
+	res.end( body ,"utf8");
+}
+
+
+
+
+function proxyHandler(req, res, next, p, buffer, path){
+
+	// Define Default Handler
+	// Has the user specified the handler
+	// determine the default`
+	if(!p.then){
+		if(req.method==='GET'){
+			if(!p.method||p.method.toUpperCase()==='GET'){
+				// Change the location
+				p.then = 'redirect';
+			}
+			else{
+				// return the signed path
+				p.then = 'return';
+			}
+		}
+		else{
+			// proxy the request through this server
+			p.then = 'proxy';
+		}
+	}
+
+
+	//
+	if(p.then==='redirect'){
+		// redirect the users browser to the new path
+		redirect(req, path, null, next);
+	}
+	else if(p.then==='return'){
+		// redirect the users browser to the new path
+		serveUp(res, path, p.callback);
+	}
+	else{
+		var options = url.parse(path);
+		options.method = p.method ? p.method.toUpperCase() : req.method;
+
+		//
+		// Proxy
+		proxy.proxy(req, res, options, buffer);
+	}
+}
