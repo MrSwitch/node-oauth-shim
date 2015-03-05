@@ -267,7 +267,9 @@ exports.proxy = function(req, res, options, buffer){
 	});
 
 	if(!req){
-		console.error("There is a proxy error");
+		console.error("proxyError");
+		proxyError();
+		return;
 	}
 
 	var errState = false;
