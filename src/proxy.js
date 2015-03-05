@@ -26,8 +26,13 @@ var request = function(opts, callback){
 //	opts.protocol = null;
 
 	/**/
-
-	var req = (opts.protocol === 'https:'? https : http ).request(opts, callback);
+	var req;
+	try{
+		req = (opts.protocol === 'https:'? https : http ).request(opts, callback);
+	}
+	catch(e){
+		console.error(JSON.stringify(opts,null, 2));
+	}
 	return req;
 };
 
