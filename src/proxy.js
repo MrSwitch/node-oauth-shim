@@ -31,6 +31,7 @@ var request = function(opts, callback){
 		req = (opts.protocol === 'https:'? https : http ).request(opts, callback);
 	}
 	catch(e){
+		console.error(e);
 		console.error(JSON.stringify(opts,null, 2));
 	}
 	return req;
@@ -264,6 +265,10 @@ exports.proxy = function(req, res, options, buffer){
 			}
 		});
 	});
+
+	if(!req){
+		console.error("There is a proxy error");
+	}
 
 	var errState = false;
 
