@@ -11,7 +11,7 @@ var http=require('http');
 var https=require('https');
 var EventEmitter=require('events').EventEmitter;
 
-var request = function(opts, callback){
+function request(opts, callback){
 
 	/*
 	// Use fiddler?
@@ -75,6 +75,7 @@ exports.proxy = function(req, res, options, buffer){
 	}
 
 	if (options.method === 'POST'||options.method === 'PUT') {
+		console.log('content-type:',req.headers['content-type']);
 		options.headers['content-type'] = req.headers['content-type'];
 	}
 
@@ -85,6 +86,7 @@ exports.proxy = function(req, res, options, buffer){
 		if(header.match(/^x-/i)){
 			options.headers[header] = req.headers[header];
 		}
+		console.log(JSON.stringify(options.headers,null,2));
 	}
 
 
