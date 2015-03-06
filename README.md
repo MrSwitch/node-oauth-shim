@@ -1,62 +1,95 @@
 # OAuth-shim
-This node module provides a "shim" service for clientside web apps adopting serverside OAuth2 or OAuth1 authentication but fighting to keep it all the browser, and shims the tedious dog legging through servers that has become OAuth1's curse.
+Middleware offering OAuth1/OAuth2 authorization handshake for web applications using the [HelloJS](http://adodson.com/hello.js) clientside authentication library.
 
 
-## Use case
+## tl;dr;
 
-Popular API's like Twitter, Dropbox and Yahoo require this server-to-server authentication paradigm. What oauthshim does is set up a RESTful service which shims up these web API's. This is used by clientside libraries like [HelloJS](http://adodson.com/hello.js) as a fallback to keep everything running in the client.
-
-## Demo
-
-[https://auth-server.herokuapp.com](https://auth-server.herokuapp.com) is a service which utilizes this package. You can register your own Application Key and Secret there if you dont want to set your own up. But for production you shouldn't rely on that service.
+[https://auth-server.herokuapp.com](https://auth-server.herokuapp.com) is a service which utilizes this package. If you dont want to implement your own you can simply and freely register thirdparty application Key's and Secret's there.
 
 
-## Installing on the server
-
-Install the package
-
-	npm install oauth-shim
+## Implement
 
 
-## Using with ExpressJS
-	
-	var oauthshim = require('oauth-shim'),
-		express = require('express');
+```bash
+npm install oauth-shim
+```
 
-	var app = express();
-	app.all('/oauthproxy', oauthshim.request);
+Middleware for Express/Connect
 
-	// Initiate the shim with Client ID's e.g.
-	oauthshim.init({
-		// key : Secret
-		'12345' : 'secret678910',
-		'abcde' : 'secretfghijk'
-	});
 
-	// Print request->response to console.
-	oauthshim.debug = true;
+```javascript
+var oauthshim = require('oauth-shim'),
+	express = require('express');
+
+var app = express();
+app.all('/oauthproxy', oauthshim);
+
+// Initiate the shim with Client ID's and secret, e.g.
+oauthshim.init({
+	// id : secret
+	'12345' : 'secret678910',
+	'abcde' : 'secretfghijk'
+});
+```
+
+
+
 
 The code above says apply the shim to all requests to the pathname `/oauthproxy`.
 
-## Using with ConnectJS
+## Customised Middleware
 
-Change `oauthshim.request` to `oauthshim.listen`
+### Capture Access Tokens
+
+Use the middleware to capture the access_token registered with your app at any point in the series of operations that this module steps through. In the example below they are disseminated with a `customHandler` in the middleware chain to capture the access_token...
 
 
-### Asynchronsly access secret
+```javascript
 
-If you want to return clientID's asynchronosly (perhaps you want to look up from a database) then override the getCredentials method. Here's the basics e.g...
+app.all('/oauthproxy',
+			oauthshim.interpret,
+			customHandler,
+			oauthshim.proxy,
+			oauthshim.redirect,
+			oauthshim.unhandled);
 
-	oauthshim.getCredentials = function(id,callback){
-		// Return
-		if(id === '12345'){
-			callback('secret678910');
-		}
-		if(id === 'abcde'){
-			callback('secretfghijk');
-		}
+
+function customHandler(req, res, next){
+
+	// Check that this is a login redirect with an access_token (not a RESTful API call via proxy)
+	if( req.oauthshim &&
+		req.oauthshim.redirect &&
+		req.oauthshim.data &&
+		req.oauthshim.data.access_token &&
+		req.oauthshim.options &&
+		!req.oauthshim.options.path ){
+
+			// do something with the token (req.oauthshim.data.access_token)
 	}
 
+	// Call next to complete the operation
+	next()
+}
+
+```
+
+
+### Asynchronsly retrieve the secret
+
+Rewrite the function `getCredentials` to change the way the client secret is stored/retrieved. This method is asyncronous, to access the secret from a database etc.. 
+e.g...
+
+```javascript
+oauthshim.getCredentials = function(id,callback){
+	// Return
+	if(id === '12345'){
+		callback('secret678910');
+	}
+	if(id === 'abcde'){
+		callback('secretfghijk');
+	}
+}
+```
 
 ## Authentication API
 
@@ -171,20 +204,12 @@ Add a JSONP callback function and override the method. E.g.
 	&callback=myJSONP
 
 
-## Contributing
+## Specs
 
-Don't forget to run the tests. 
+```bash
+# Install the test dependencies.
+npm install -l
 
-	# Install the test dependencies.
-
-	npm install -l
-
-	# Run the tests, continuously
-
-	npm test
-
-	# Single
-
-	mocha test
-
-
+# Run tests
+npm test
+```

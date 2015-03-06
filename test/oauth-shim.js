@@ -29,8 +29,6 @@ var app = express();
 // SETUP SHIM LISTENING
 ////////////////////////////////
 
-oauthshim.debug = false;
-
 oauthshim.init({
 	// OAuth 1
 	'oauth_consumer_key' : 'oauth_consumer_secret',

@@ -1,6 +1,6 @@
 {
   "name": "oauth-shim",
-  "version": "0.1.7",
+  "version": "0.2.0",
   "description": "OAuth2 shim for OAuth1 services, works with the clientside library HelloJS",
   "main": "index.js",
   "scripts": {
@@ -21,15 +21,11 @@
   "bugs": {
     "url": "https://github.com/MrSwitch/node-oauth-shim/issues"
   },
-  "dependencies": {
-    "crypto": "0.0.3"
-  },
   "devDependencies": {
-    "should": ">= 0.0.0",
     "expect.js" : "*",
     "express": "*",
     "connect": "*",
     "supertest": "*",
-    "mocha": "^2.0.1"
+    "mocha": "*"
   }
 }
