@@ -22,7 +22,8 @@ module.exports = function(p, callback){
 	// p = merge(services[p.network], p);
 	var	path,
 		token_secret,
-		client_secret = p.client_secret;
+		client_secret = p.client_secret, 
+		version = (p.version || p.oauth.version );
 
 	var opts = {
 		oauth_consumer_key : p.client_id
@@ -82,10 +83,17 @@ module.exports = function(p, callback){
 		});
 
 		// Version 1.0a requires the oauth_callback parameter for signing the request
-		if( (p.version || p.oauth.version ) ==='1.0a'){
+		if( version ==='1.0a'){
 			// Define the OAUTH CALLBACK Parameters
 			opts.oauth_callback = oauth_callback;
+
+			// TWITTER HACK
+			// See issue https://twittercommunity.com/t/oauth-callback-ignored/33447
+			if( path.match('api.twitter.com') ){
+				opts.oauth_callback = encodeURIComponent(oauth_callback);
+			}
 		}
+
 
 	}
 	else{
@@ -205,12 +213,19 @@ module.exports = function(p, callback){
 				_token_secrets[json.oauth_token] = json.oauth_token_secret;
 			}
 
+			var params = {
+				oauth_token : json.oauth_token
+			};
+
+			// Version 1.0a requires the oauth_callback parameter for signing the request
+			if( version !== '1.0a' ){
+				// Define the OAUTH CALLBACK Parameters
+				params.oauth_callback = oauth_callback;
+			}
+
 			// Great redirect the user to authenticate
 			var url = (p.auth_url||p.oauth.auth);
-			callback( url + (url.indexOf('?')>-1?'&':'?') + param({
-				oauth_token : json.oauth_token,
-				oauth_callback : oauth_callback
-			}) );
+			callback( url + (url.indexOf('?')>-1?'&':'?') + param(params) );
 		}
 
 		else{
