@@ -330,7 +330,21 @@ describe('OAuth authenticate', function(){
 		expect( signed ).to.equal("https://api.dropbox.com/1/oauth/request_token?oauth_callback=http%3A%2F%2Flocation.com%2F%3Fwicked%3Dknarly%26redirect_uri%3Dhttp%253A%252F%252Flocal.knarly.com%252Fhello.js%252Fredirect.html%253Fstate%253D%25257B%252522proxy%252522%25253A%252522http%25253A%25252F%25252Flocalhost%252522%25257D&oauth_consumer_key=t5s644xtv7n4oth&oauth_nonce=1354345524&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1354345524&oauth_version=1.0&oauth_signature=7hCq53%2Bcl5PBpKbCa%2FdfMtlGkS8%3D");
 	});
 
-	it("should redirect users to the path defined as `auth_url`", function(done){
+	it("should redirect users to the path defined as `auth_url` with the oauth_token in 1.0a", function(done){
+
+		request(app)
+			.get('/proxy?'+querystring.stringify(query))
+			.expect('Location', new RegExp( query.auth_url.replace(/\//g,'\\/') + '\\?oauth_token\\=oauth_token' ) )
+			.expect(302)
+			.end(function(err, res){
+				if (err) throw err;
+				done();
+			});
+	});
+
+	it("should redirect users to the path defined as `auth_url` with the oauth_token and oauth_callback in 1.0", function(done){
+
+		query.version = 1;
 
 		request(app)
 			.get('/proxy?'+querystring.stringify(query))
@@ -341,6 +355,7 @@ describe('OAuth authenticate', function(){
 				done();
 			});
 	});
+
 
 	it("should return an #error if given a wrong request_url", function(done){
 
