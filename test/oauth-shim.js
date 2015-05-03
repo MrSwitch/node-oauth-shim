@@ -42,6 +42,7 @@ oauthshim.init({
 app.all('/proxy', oauthshim );
 
 
+
 ////////////////////////////////
 // SETUP REMOTE SERVER
 // This reproduces a third party OAuth and API Server
@@ -81,6 +82,13 @@ remoteServer.use('/oauth/grant', function(req,res){
 	res.end();
 });
 
+
+var error_unrecognised = {
+	error : {
+		code : 'invalid_request',
+		message : 'The request is unrecognised'
+	}
+};
 
 describe('OAuth2 exchanging code for token,', function(){
 
@@ -318,7 +326,7 @@ describe('OAuth authenticate', function(){
 		for(var x in o){
 			hash.push(x + '=' + o[x]);
 		}
-		return new RegExp( query.redirect_uri.replace(/\//g,'\\/') + '#' + hash.join('&') );
+		return new RegExp( (query.redirect_uri || '').replace(/\//g,'\\/') + '#' + hash.join('&') );
 	}
 
 
@@ -411,6 +419,18 @@ describe('OAuth authenticate', function(){
 			});
 	});
 
+	it("should return error 'invalid_request' if redirect_uri is missing", function(done){
+
+		delete query.redirect_uri;
+
+		request(app)
+			.get('/proxy?'+querystring.stringify( query ))
+			.expect(200, JSON.stringify(error_unrecognised, null, 2))
+			.end(function(err, res){
+				if (err) throw err;
+				done();
+			});
+	});
 
 	it("should error with required_credentials if the client_id was not provided", function(done){
 

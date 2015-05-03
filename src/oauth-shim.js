@@ -111,7 +111,7 @@ module.exports.interpret = function( req, res, next ){
 	//
 	// OAUTH1
 	//
-	else if( ( p.redirect_uri && p.oauth && parseInt(p.oauth.version,10) === 1 ) || p.token_url || p.oauth_token ){
+	else if( p.redirect_uri && ( ( p.oauth && parseInt(p.oauth.version,10) === 1 ) || p.token_url || p.oauth_token ) ) {
 
 		p.location = url.parse("http"+(req.connection.encrypted?"s":'')+'://'+req.headers.host+req.url);
 
