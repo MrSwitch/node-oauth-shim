@@ -432,6 +432,20 @@ describe('OAuth authenticate', function(){
 			});
 	});
 
+	it("should return error 'invalid_request' if redirect_uri is not a URL", function(done){
+
+		query.redirect_uri = 'should be a url';
+
+		request(app)
+			.get('/proxy?'+querystring.stringify( query ))
+			.expect(200, JSON.stringify(error_unrecognised, null, 2))
+			.end(function(err, res){
+				if (err) throw err;
+				done();
+			});
+	});
+
+
 	it("should error with required_credentials if the client_id was not provided", function(done){
 
 		delete query.client_id;

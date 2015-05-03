@@ -87,6 +87,12 @@ module.exports.interpret = function( req, res, next ){
 	};
 
 
+	// Generic formatting `redirect_uri` is of the correct format
+	if ( typeof p.redirect_uri === 'string' && !p.redirect_uri.match(/^https?:\/\/[a-z\.\-]+/i) ) {
+		p.redirect_uri = '';
+	}
+
+
 	//
 	// OAUTH2
 	//
