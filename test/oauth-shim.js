@@ -253,6 +253,26 @@ describe('OAuth2 exchange refresh_token for access token', function(){
 	});
 
 
+	context("should permit a variety of redirect_uri's", function(){
+
+		["http://99problems.com","https://problems", ,"file:///problems"].forEach(function(s){
+
+			it("should regard "+s+" as valid", function(done){
+
+				query.redirect_uri = s;
+				request(app)
+					.get('/proxy?'+querystring.stringify(query))
+					.expect(302)
+					.end(function(err, res){
+						if (err) throw err;
+						done();
+					});
+			});
+
+		});
+	});
+
+
 	xit("should trigger on authorization handler", function(done){
 
 		oauthshim.onauthorization = function(session){
