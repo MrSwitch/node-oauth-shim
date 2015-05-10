@@ -38,17 +38,25 @@ The above code will put your shimming service to the pathname `http://localhost:
 
 ## Example
 
-An example of the above script can be found at `./example.js` this is a demo server which you can quickly get up and running with.
+An example of the above script can be found at [example.js](./example.js).
 
-This requires the developer dependencies `npm install -l`.
+You can run this example script:
 
-*Tip:* Try storing your `NETWORK_ID` and `NETWORK_SECRET` in a `.env` file. That way you can use the following command to launch your shimming server.
+* Install developer dependencies `npm install -l`.
+* Create a `.env` file with a `NETWORK_ID` and `NETWORK_SECRET`. e.g. 
+	
+	TWITTER_ID='twit1234'
+	TWITTER_SECRET='secret1234'
+	YAHOO_ID='yahoo1234'
+	YAHOO_SECRET='secret1234'
+
+* Then start up the server...
 
 ```bash
 PORT=5500 env $(cat .env | xargs) node example.js
 ```
 
-This will create a shimming server at the path `http://localhost:5500/proxy`
+This sets the `.env` lines as local environment variables and will startup a server on port 5500. Now define your `redirect_uri` via `hello.init` to point to `http://localhost:5500/proxy`.
 
 
 
