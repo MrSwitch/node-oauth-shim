@@ -22,6 +22,7 @@ var oauthshim = require('oauth-shim'),
 	express = require('express');
 
 var app = express();
+app.listen(3000);
 app.all('/oauthproxy', oauthshim);
 
 // Initiate the shim with Client ID's and secret, e.g.
@@ -32,10 +33,34 @@ oauthshim.init({
 });
 ```
 
+The above code will put your shimming service to the pathname `http://localhost:3000/oauthproxy`.
 
 
+## Example
 
-The code above says apply the shim to all requests to the pathname `/oauthproxy`.
+An example of the above script can be found at [example.js](./example.js).
+
+To run `node example.js` locally:
+
+* Install developer dependencies `npm install -l`.
+* Create a `.env` file with a `NETWORK_ID` and `NETWORK_SECRET`. e.g. 
+
+```bash
+TWITTER_ID='twit1234'
+TWITTER_SECRET='secret1234'
+YAHOO_ID='yahoo1234'
+YAHOO_SECRET='secret1234'
+```
+
+* Then start up the server...
+
+```bash
+PORT=5500 env $(cat .env | xargs) node example.js
+```
+
+This sets the `.env` lines as local environment variables and will startup a server on port 5500. Now define your `redirect_uri` via `hello.init` to point to `http://localhost:5500/proxy`.
+
+
 
 ## Customised Middleware
 
