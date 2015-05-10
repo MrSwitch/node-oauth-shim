@@ -40,15 +40,17 @@ The above code will put your shimming service to the pathname `http://localhost:
 
 An example of the above script can be found at [example.js](./example.js).
 
-You can run this example script:
+To run `node example.js` locally:
 
 * Install developer dependencies `npm install -l`.
 * Create a `.env` file with a `NETWORK_ID` and `NETWORK_SECRET`. e.g. 
-	
-	TWITTER_ID='twit1234'
-	TWITTER_SECRET='secret1234'
-	YAHOO_ID='yahoo1234'
-	YAHOO_SECRET='secret1234'
+
+```bash
+TWITTER_ID='twit1234'
+TWITTER_SECRET='secret1234'
+YAHOO_ID='yahoo1234'
+YAHOO_SECRET='secret1234'
+```
 
 * Then start up the server...
 
