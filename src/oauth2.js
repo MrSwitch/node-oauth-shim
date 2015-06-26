@@ -60,6 +60,12 @@ module.exports = function(p, callback){
 		'Content-length': post.length,
 		'Content-type':'application/x-www-form-urlencoded'
 	};
+	
+	// Workaround for Vimeo, which requires an extra Authorization header
+	// TODO: Make this generic (configurable from outside library)
+	if(p.network === 'vimeo') {
+		r.headers.Authorization = 'basic ' + new Buffer(p.client_id + ':' + p.client_secret).toString('base64');
+	}
 
 	//opts.body = post;
 	request( r, post, function(err,res,body){
