@@ -63,7 +63,7 @@ module.exports = function(p, callback){
 	
 	// Workaround for Vimeo, which requires an extra Authorization header
 	// TODO: Make this generic (configurable from outside library)
-	if(p.network === 'vimeo') {
+	if(p.authorisation === 'header') {
 		r.headers.Authorization = 'basic ' + new Buffer(p.client_id + ':' + p.client_secret).toString('base64');
 	}
 
