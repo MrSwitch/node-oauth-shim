@@ -118,19 +118,26 @@ oauthshim.getCredentials = function(id,callback){
 
 ## Authentication API
 
+The API adopts similar URL format as the standard OAuth2. Additional metadata about how to handle the request is communicated through the `state` parameter as a JSON string.
+
 ### Authentication OAuth 2.0
 
-The OAuth2 flow for the shim starts after a web application sends a client out to a providers site to grant permissions. The response is an authorization code "[AUTH_CODE]" which is returned to your site, this needs to be exchanged for an Access Token. Your page then needs to send this code to an //auth-server with your client_id in exhchange for an access token, e.g.
+[STATE] includes:
+
+||key||value||
+|oauth.version|2|
+|oauth.grant|[PROVIDERS_OAUTH2_GRANT_URL]|
+
+
+The OAuth2 flow for the shim starts after a web application sends a client out to a providers site to grant permissions. The response is an authorization code "[AUTH_CODE]" which is returned to your site, this needs to be exchanged for an Access Token. Your page then needs to send this code to an //auth-server to be exhchanged for an access token, e.g.
 
 
 	?redirect_uri=[REDIRECT_PATH]
 	&code=[AUTH_CODE]
 	&client_id=[APP_KEY]
 	&state=[STATE]
-	&grant_url=[PROVIDERS_OAUTH2_GRANT_URL]
 
-
-The client will be redirected back to the location of [REDIRECT_PATH], with the contents of the server response as well as whatever was defined in the [STATE] in the hash. e.g...
+The //auth-server exchanges the Authorization code for an access_token and redirects the client back to the location of [REDIRECT_PATH], with the contents of the server response as well as whatever was defined in the [STATE] in the hash. e.g...
 
 
 	[REDIRECT_PATH]#state=[STATE]&access_token=ABCD1233234&expires=123123123
@@ -139,18 +146,24 @@ The client will be redirected back to the location of [REDIRECT_PATH], with the 
 
 ### Authentication OAuth 1.0 &amp; 1.0a
 
+[STATE] includes:
+
+||key||value||
+|oauth.version|1.0a|
+|oauth.request|[OAUTH_REQUEST_TOKEN_URL]|
+|oauth.auth|[OAUTH_AUTHORIZATION_URL]|
+|oauth.token|[OAUTH_TOKEN_URL]|
+|oauth_proxy|//auth-server|
+
 OAuth 1.0 has a number of steps so forgive the verbosity here. An app is required to make an initial request to the //auth-server, which in-turn initiates the authentication flow.
 
 
-	?redirect_uri=[REDIRECT_PATH]
+	//auth-server?redirect_uri=[REDIRECT_PATH]
 	&client_id=[APP_KEY]
-	&request_url=[OAUTH_REQUEST_TOKEN_URL]
-	&auth_url=[OAUTH_AUTHORIZATION_URL]
-	&token_url=[OAUTH_TOKEN_URL]
 	&state=[STATE]
 
 
-The OAuthShim signs the client request and redirects the user to the providers login page defined by `[OAUTH_AUTHRIZATION_URL]`.
+The //auth-server signs the client request and redirects the user to the providers login page defined by `[OAUTH_AUTHRIZATION_URL]`.
 
 Once the user has signed in they are redirected back to a page on the developers app defined by `[REDIRECT_PATH]`. 
 
@@ -159,20 +172,17 @@ The provider should have included an oauth_callback parameter which was defined 
 
 	[REDIRECT_PATH]
 	?state=[STATE]
-	&proxy_url=https://auth-server.herokuapp.com/proxy
 	&client_id=[APP_KEY]
-	&token_url=[OAUTH_TOKEN_URL]
 	&oauth_token=abc12465
 
 
 The page you defined locally as the `[REDIRECT_PATH]`, must then construct a call to //auth-server to exchange the unauthorized oauth_token for an access token. This would look like this...
 
 
-	?oauth_token=abc12465
+	//auth-server?oauth_token=abc12465
 	&redirect_uri=[REDIRECT_PATH]
 	&client_id=[APP_KEY]
 	&state=[STATE]
-	&token_url=[OAUTH_TOKEN_URL]
 
 
 Finally the //auth-server returns the access_token to your redirect path and its the responsibility of your script to store this in the client in order to make subsequent API calls.

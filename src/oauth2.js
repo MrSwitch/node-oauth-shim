@@ -38,12 +38,12 @@ module.exports = function(p, callback){
 	}
 
 	// Get the grant_url
-	var grant_url = p.grant_url || p.grant || (p.oauth ? p.oauth.grant : false  );
+	var grant_url = p.oauth ? p.oauth.grant : false;
 
 	if(!grant_url){
 		return callback({
 			error : "required_grant",
-			error_message  : "Missing parameter grant_url",
+			error_message  : "Missing parameter state.oauth.grant url",
 			state : p.state || ''
 		});
 	}

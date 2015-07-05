@@ -55,13 +55,13 @@ module.exports = function(p, callback){
 	//
 	if(!p.oauth_token){
 
-		// Change the path to be that of the intiial handshake
-		path = (p.request_url || (p.oauth?p.oauth.request:null));
+		// Change the path to be that of the intitial handshake
+		path = p.oauth ? p.oauth.request : null;
 
 		if(!path){
 			return callback( p.redirect_uri, {
 				error : "required_request_url",
-				error_message : "A request_url is required",
+				error_message : "A state.oauth.request is required",
 				state : p.state || ''
 			});
 		}
@@ -73,9 +73,9 @@ module.exports = function(p, callback){
 
 		// Callback
 		var oauth_callback = p.redirect_uri + (p.redirect_uri.indexOf('?')>-1?'&':'?') + param({
+			// proxy_url: Deprecated as of HelloJS @ v1.7.1 - property included in `state`, accessed from `state` hence.
 			proxy_url : p.location.protocol + '//'+ p.location.host + p.location.pathname,
 			state     : p.state || '',
-			token_url : p.token_url || p.oauth.token,
 			client_id : p.client_id
 		}, function(r){
 			// Encode all the parameters
@@ -104,12 +104,12 @@ module.exports = function(p, callback){
 		//
 
 		// Change the path to be that of the Providers token exchange
-		path = p.token_url || (p.oauth?p.oauth.token:null);
+		path = p.oauth ? p.oauth.token : null;
 
 		if(!path){
 			return callback( p.redirect_uri, {
 				error : "required_token_url",
-				error_message : "A token_url is required to authenticate the oauth_token",
+				error_message : "A state.oauth.token url is required to authenticate the oauth_token",
 				state : p.state || ''
 			});
 		}
@@ -224,7 +224,7 @@ module.exports = function(p, callback){
 			}
 
 			// Great redirect the user to authenticate
-			var url = (p.auth_url||p.oauth.auth);
+			var url = p.oauth.auth;
 			callback( url + (url.indexOf('?')>-1?'&':'?') + param(params) );
 		}
 

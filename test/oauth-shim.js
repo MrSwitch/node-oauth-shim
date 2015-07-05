@@ -63,17 +63,31 @@ afterEach(function(){
 });
 
 
+
+////////////////////////////////
+// Helper  functions
+////////////////////////////////
+
+function param(o) {
+	var r = {};
+	for (var x in o) if(o.hasOwnProperty(x)){{
+		if (typeof(o[x]) === 'object') {
+			r[x] = JSON.stringify(o[x]);
+		}
+		else {
+			r[x] = o[x];
+		}
+	}}
+	return querystring.stringify(r);
+}
+
+
 ////////////////////////////////
 // TEST OAUTH2 SIGNING
 ////////////////////////////////
 
 
-var oauth2codeExchange = querystring.stringify({
-	expires_in : 'expires_in',
-	access_token : 'access_token',
-	state : 'state'
-});
-
+var oauth2codeExchange = '';
 
 remoteServer.use('/oauth/grant', function(req,res){
 
@@ -96,12 +110,21 @@ describe('OAuth2 exchanging code for token,', function(){
 
 	beforeEach(function(){
 		query = {
-			'grant_url' : 'http://localhost:'+test_port+'/oauth/grant',
 			'code' : '123456',
 			'client_id' : 'client_id',
 			'redirect_uri' : 'http://localhost:'+test_port+'/response',
-			'state' : "state"
+			'state' : JSON.stringify({
+				'oauth' : {
+					'grant' : 'http://localhost:'+test_port+'/oauth/grant'
+				}
+			})
 		};
+		oauth2codeExchange = querystring.stringify({
+			expires_in : 'expires_in',
+			access_token : 'access_token',
+			state : query.state
+		});
+
 	});
 
 	function redirect_uri(o){
@@ -138,16 +161,16 @@ describe('OAuth2 exchanging code for token,', function(){
 			});
 	});
 
-	it("should fail if the grant_url is missing, and redirect back to redirect_uri", function(done){
+	it("should fail if the state.oauth.grant is missing, and redirect back to redirect_uri", function(done){
 
-		delete query.grant_url;
+		query.state = JSON.stringify({});
 
 		request(app)
 			.get('/proxy?'+querystring.stringify(query))
 			.expect('Location', redirect_uri({
 				error : 'required_grant',
 				error_message : '([^&]+)',
-				state: query.state
+				state: encodeURIComponent(query.state)
 			}))
 			.expect(302)
 			.end(function(err, res){
@@ -156,16 +179,20 @@ describe('OAuth2 exchanging code for token,', function(){
 			});
 	});
 
-	it("should fail if the grant_url is invalid, and redirect back to redirect_uri", function(done){
+	it("should fail if the state.oauth.grant is invalid, and redirect back to redirect_uri", function(done){
 
-		query.grant_url = "http://localhost:5555";
+		query.state = JSON.stringify({
+			oauth: {
+				grant : "http://localhost:5555"
+			}
+		});
 
 		request(app)
 			.get('/proxy?'+querystring.stringify(query))
 			.expect('Location', redirect_uri({
 				error : 'invalid_grant',
 				error_message : '([^&]+)',
-				state: query.state
+				state: encodeURIComponent(query.state)
 			}))
 			.expect(302)
 			.end(function(err, res){
@@ -184,7 +211,7 @@ describe('OAuth2 exchanging code for token,', function(){
 			.expect('Location', redirect_uri({
 				error : 'required_credentials',
 				error_message : '([^&]+)',
-				state: query.state
+				state: encodeURIComponent(query.state)
 			}))
 			.expect(302)
 			.end(function(err, res){
@@ -202,7 +229,7 @@ describe('OAuth2 exchanging code for token,', function(){
 			.expect('Location', redirect_uri({
 				error : 'invalid_credentials',
 				error_message : '([^&]+)',
-				state: query.state
+				state: encodeURIComponent(query.state)
 			}))
 			.expect(302)
 			.end(function(err, res){
@@ -224,12 +251,20 @@ describe('OAuth2 exchange refresh_token for access token', function(){
 
 	beforeEach(function(){
 		query = {
-			'grant_url' : 'http://localhost:'+test_port+'/oauth/grant',
 			'refresh_token' : '123456',
 			'client_id' : 'client_id',
 			'redirect_uri' : 'http://localhost:'+test_port+'/response',
-			'state' : "state"
+			'state' : JSON.stringify({
+				'oauth' : {
+					'grant' : 'http://localhost:'+test_port+'/oauth/grant'
+				}
+			})
 		};
+		oauth2codeExchange = querystring.stringify({
+			expires_in : 'expires_in',
+			access_token : 'access_token',
+			state : query.state
+		});
 	});
 
 	function redirect_uri(o){
@@ -331,19 +366,22 @@ describe('OAuth authenticate', function(){
 
 	beforeEach(function(){
 		query = {
-			request_url : 'http://localhost:'+test_port+'/oauth/request',
-			token_url : 'http://localhost:'+test_port+'/oauth/token',
-			auth_url : 'http://localhost:'+test_port+'/oauth/auth',
-			version : '1.0a',
-			state : '',
+			state : {
+				oauth:{
+					version : '1.0a',
+					request : 'http://localhost:'+test_port+'/oauth/request',
+					token : 'http://localhost:'+test_port+'/oauth/token',
+					auth : 'http://localhost:'+test_port+'/oauth/auth'
+				}
+			},
 			client_id : 'oauth_consumer_key',
 			redirect_uri : 'http://localhost:'+test_port+'/'
 		};
 	});
 
-	function redirect_uri(o){
+	function redirect_uri(o) {
 		var hash = [];
-		for(var x in o){
+		for(var x in o) {
 			hash.push(x + '=' + o[x]);
 		}
 		return new RegExp( (query.redirect_uri || '').replace(/\//g,'\\/') + '#' + hash.join('&') );
@@ -358,11 +396,11 @@ describe('OAuth authenticate', function(){
 		expect( signed ).to.equal("https://api.dropbox.com/1/oauth/request_token?oauth_callback=http%3A%2F%2Flocation.com%2F%3Fwicked%3Dknarly%26redirect_uri%3Dhttp%253A%252F%252Flocal.knarly.com%252Fhello.js%252Fredirect.html%253Fstate%253D%25257B%252522proxy%252522%25253A%252522http%25253A%25252F%25252Flocalhost%252522%25257D&oauth_consumer_key=t5s644xtv7n4oth&oauth_nonce=1354345524&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1354345524&oauth_version=1.0&oauth_signature=7hCq53%2Bcl5PBpKbCa%2FdfMtlGkS8%3D");
 	});
 
-	it("should redirect users to the path defined as `auth_url` with the oauth_token in 1.0a", function(done){
+	it("should redirect users to the path defined as `state.oauth.auth` with the oauth_token in 1.0a", function(done){
 
 		request(app)
-			.get('/proxy?'+querystring.stringify(query))
-			.expect('Location', new RegExp( query.auth_url.replace(/\//g,'\\/') + '\\?oauth_token\\=oauth_token' ) )
+			.get('/proxy?'+param(query))
+			.expect('Location', new RegExp( query.state.oauth.auth.replace(/\//g,'\\/') + '\\?oauth_token\\=oauth_token' ) )
 			.expect(302)
 			.end(function(err, res){
 				if (err) throw err;
@@ -370,13 +408,13 @@ describe('OAuth authenticate', function(){
 			});
 	});
 
-	it("should redirect users to the path defined as `auth_url` with the oauth_token and oauth_callback in 1.0", function(done){
+	it("should redirect users to the path defined as `state.oauth.auth` with the oauth_token and oauth_callback in 1.0", function(done){
 
-		query.version = 1;
+		query.state.oauth.version = 1;
 
 		request(app)
-			.get('/proxy?'+querystring.stringify(query))
-			.expect('Location', new RegExp( query.auth_url.replace(/\//g,'\\/') + '\\?oauth_token\\=oauth_token\\&oauth_callback\\=' + encodeURIComponent(query.redirect_uri).replace(/\//g,'\\/') ) )
+			.get('/proxy?'+param(query))
+			.expect('Location', new RegExp( query.state.oauth.auth.replace(/\//g,'\\/') + '\\?oauth_token\\=oauth_token\\&oauth_callback\\=' + encodeURIComponent(query.redirect_uri).replace(/\//g,'\\/') ) )
 			.expect(302)
 			.end(function(err, res){
 				if (err) throw err;
@@ -385,16 +423,16 @@ describe('OAuth authenticate', function(){
 	});
 
 
-	it("should return an #error if given a wrong request_url", function(done){
+	it("should return an #error if given a wrong `state.oauth.request`", function(done){
 
-		query.request_url = 'http://localhost:'+test_port+'/oauth/brokenrequest';
+		query.state.oauth.request = 'http://localhost:'+test_port+'/oauth/brokenrequest';
 
 		request(app)
-			.get('/proxy?'+querystring.stringify(query))
+			.get('/proxy?'+param(query))
 			.expect('Location', redirect_uri({
 				error : 'auth_failed',
 				error_message : '([^&]+)',
-				state : query.state
+				state : encodeURIComponent(JSON.stringify(query.state))
 			}))
 			.expect(302)
 			.end(function(err, res){
@@ -405,14 +443,14 @@ describe('OAuth authenticate', function(){
 
 	it("should return an Error 'server_error' if given a wrong domain", function(done){
 
-		query.request_url = 'http://localhost:'+(test_port+1)+'/wrongdomain';
+		query.state.oauth.request = 'http://localhost:'+(test_port+1)+'/wrongdomain';
 
 		request(app)
-			.get('/proxy?'+querystring.stringify(query))
+			.get('/proxy?'+param(query))
 			.expect('Location', redirect_uri({
 				error : 'server_error',
 				error_message : '([^&]+)',
-				state : query.state
+				state : encodeURIComponent(JSON.stringify(query.state))
 			}))
 			.expect(302)
 			.end(function(err, res){
@@ -421,16 +459,16 @@ describe('OAuth authenticate', function(){
 			});
 	});
 
-	it("should return Error 'required_request_url' if request_url is missing", function(done){
+	it("should return Error 'required_request_url' if `state.oauth.request` url is missing", function(done){
 
-		delete query.request_url;
+		delete query.state.oauth.request;
 
 		request(app)
-			.get('/proxy?'+querystring.stringify( query ))
+			.get('/proxy?'+param(query))
 			.expect('Location', redirect_uri({
 				error : 'required_request_url',
 				error_message : '([^&]+)',
-				state : query.state
+				state : encodeURIComponent(JSON.stringify(query.state))
 			}))
 			.expect(302)
 			.end(function(err, res){
@@ -444,7 +482,7 @@ describe('OAuth authenticate', function(){
 		delete query.redirect_uri;
 
 		request(app)
-			.get('/proxy?'+querystring.stringify( query ))
+			.get('/proxy?'+param( query ))
 			.expect(200, JSON.stringify(error_unrecognised, null, 2))
 			.end(function(err, res){
 				if (err) throw err;
@@ -457,7 +495,7 @@ describe('OAuth authenticate', function(){
 		query.redirect_uri = 'should be a url';
 
 		request(app)
-			.get('/proxy?'+querystring.stringify( query ))
+			.get('/proxy?'+param( query ))
 			.expect(200, JSON.stringify(error_unrecognised, null, 2))
 			.end(function(err, res){
 				if (err) throw err;
@@ -471,11 +509,11 @@ describe('OAuth authenticate', function(){
 		delete query.client_id;
 
 		request(app)
-			.get('/proxy?'+querystring.stringify(query))
+			.get('/proxy?'+param(query))
 			.expect('Location', redirect_uri({
 				error : 'required_credentials',
 				error_message : '([^&]+)',
-				state: query.state
+				state : encodeURIComponent(JSON.stringify(query.state))
 			}))
 			.expect(302)
 			.end(function(err, res){
@@ -489,11 +527,11 @@ describe('OAuth authenticate', function(){
 		query.client_id = "unrecognised";
 
 		request(app)
-			.get('/proxy?'+querystring.stringify(query))
+			.get('/proxy?'+param(query))
 			.expect('Location', redirect_uri({
 				error : 'invalid_credentials',
 				error_message : '([^&]+)',
-				state: query.state
+				state : encodeURIComponent(JSON.stringify(query.state))
 			}))
 			.expect(302)
 			.end(function(err, res){
@@ -516,11 +554,14 @@ describe('OAuth exchange token', function(){
 
 	beforeEach(function(){
 		query = {
-			token_url : 'http://localhost:'+test_port+'/oauth/token',
 			oauth_token : 'oauth_token',
 			redirect_uri : 'http://localhost:'+test_port+'/',
 			client_id : 'oauth_consumer_key',
-			state : 'state'
+			state : {
+				oauth : {
+					token : 'http://localhost:'+test_port+'/oauth/token',
+				}
+			}
 		};
 	});
 
@@ -536,7 +577,7 @@ describe('OAuth exchange token', function(){
 	it("should exchange an oauth_token, and return an access_token", function(done){
 
 		request(app)
-			.get('/proxy?'+querystring.stringify(query))
+			.get('/proxy?'+param(query))
 			.expect('Location', redirect_uri({
 				access_token : encodeURIComponent('oauth_token:oauth_token_secret@'+query.client_id)
 			}))
@@ -556,7 +597,7 @@ describe('OAuth exchange token', function(){
 		};
 
 		request(app)
-			.get('/proxy?'+querystring.stringify(query))
+			.get('/proxy?'+param(query))
 			.expect(302)
 			.end(function(err, res){
 				if (err) throw err;
@@ -566,14 +607,14 @@ describe('OAuth exchange token', function(){
 
 	it("should return an #error if given an erroneous token_url", function(done){
 
-		query.token_url = 'http://localhost:'+test_port+'/oauth/brokentoken';
+		query.state.oauth.token = 'http://localhost:'+test_port+'/oauth/brokentoken';
 
 		request(app)
-			.get('/proxy?'+querystring.stringify(query))
+			.get('/proxy?'+param(query))
 			.expect('Location', redirect_uri({
 				error : 'auth_failed',
 				error_message : '([^&]+)',
-				state : query.state
+				state : encodeURIComponent(JSON.stringify(query.state))
 			}))
 			.expect(302)
 			.end(function(err, res){
@@ -584,14 +625,14 @@ describe('OAuth exchange token', function(){
 
 	it("should return an #error if token_url is missing", function(done){
 
-		delete query.token_url;
+		delete query.state.oauth.token;
 
 		request(app)
-			.get('/proxy?'+querystring.stringify(query))
+			.get('/proxy?'+param(query))
 			.expect('Location', redirect_uri({
 				error : 'required_token_url',
 				error_message : '([^&]+)',
-				state : query.state
+				state : encodeURIComponent(JSON.stringify(query.state))
 			}))
 			.expect(302)
 			.end(function(err, res){
@@ -605,11 +646,11 @@ describe('OAuth exchange token', function(){
 		query.oauth_token = 'boom';
 
 		request(app)
-			.get('/proxy?'+querystring.stringify(query))
+			.get('/proxy?'+param(query))
 			.expect('Location', redirect_uri({
 				error : 'invalid_oauth_token',
 				error_message : '([^&]+)',
-				state : query.state
+				state : encodeURIComponent(JSON.stringify(query.state))
 			}))
 			.expect(302)
 			.end(function(err, res){
