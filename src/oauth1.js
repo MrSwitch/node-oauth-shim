@@ -23,7 +23,7 @@ module.exports = function(p, callback){
 	var	path,
 		token_secret,
 		client_secret = p.client_secret,
-		version = p.version || ( p.oauth ? p.oauth.version : 1 );
+		version = (p.oauth ? p.oauth.version : 1);
 
 	var opts = {
 		oauth_consumer_key : p.client_id
