@@ -7,6 +7,7 @@ var param = require('./utils/param');
 var sign = require('./sign');
 var url = require('url');
 var request = require('./utils/request');
+var error_credentials = require('./error_credentials');
 
 // token=>secret lookup
 var _token_secrets = {};
@@ -14,6 +15,12 @@ var _token_secrets = {};
 
 module.exports = function(p, callback){
 
+
+	// Missing Credentials
+	if (!p.client_secret) {
+		callback(p.redirect_uri, error_credentials(p));
+		return;
+	}
 
 
 	//
@@ -137,21 +144,6 @@ module.exports = function(p, callback){
 		}
 	}
 
-
-	//
-	// Find the client secret
-	// Get the client secret
-	//
-	
-
-	if(!client_secret){
-		callback( p.redirect_uri, {
-			error : ( p.client_id ? "invalid" : "required" ) + "_credentials",
-			error_message : "Credentials were not recognised",
-			state : p.state || ''
-		});
-		return;
-	}
 
 	// Sign the request using the application credentials
 	var signed_url = sign( path, opts, client_secret, token_secret || null);

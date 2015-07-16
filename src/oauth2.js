@@ -6,15 +6,14 @@
 var request = require('./utils/request');
 var param = require('./utils/param');
 var url = require('url');
+var error_credentials = require('./error_credentials');
 
 module.exports = function(p, callback){
 
-	if(!p.client_secret){
-		return callback({
-			error : ( (p.client_id || p.id) ? "invalid" : "required" ) + "_credentials",
-			error_message  : "Could not find the credentials for signing this request, ensure that the correct client_id is passed",
-			state : p.state || ''
-		});
+	// Missing Credentials
+	if (!p.client_secret) {
+		callback(error_credentials(p));
+		return;
 	}
 
 	// Make the OAuth2 request
