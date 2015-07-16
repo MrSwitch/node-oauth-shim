@@ -197,7 +197,7 @@ module.exports = function(p, callback){
 				//log(json);
 				json = {
 					error: json.oauth_problem|| "auth_failed",
-					error_message : res.statusCode + " could not authenticate",
+					error_message : data.toString() || (res.statusCode + " could not authenticate"),
 					state : p.state || ''
 				};
 			}
