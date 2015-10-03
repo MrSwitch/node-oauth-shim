@@ -1,13 +1,15 @@
 language: node_js
-node_js: 
+node_js:
 - "0.10"
 - "0.11"
-deploy: 
+- "0.12"
+- "4.0"
+deploy:
   provider: npm
   email: andrewjdodson@gmail.com
-  api_key: 
+  api_key:
     secure: flZCG81Pc5b14WDWXlyT3ViFG1FOi0ms2ZrQvhYjWJ0Fm5RLjf+6b8+IyUYtpVRlGQDI/NYrTT8DY8q5uG4eFuRJf5vujn3H3V4JwMNOYIGSjzsyUNCdN3Xm33mgXtnMRN31qDqCr/bRLuiRnzobQ8biySdFli3wiUBv4gwOkSI=
-  "on": 
+  "on":
     tags: true
     repo: MrSwitch/node-oauth-shim
     all_branches: true
