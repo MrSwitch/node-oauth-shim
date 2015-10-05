@@ -7,16 +7,16 @@
 // Heavily takes code design from ConnectJS
 
 var url = require('url');
-var http=require('http');
-var https=require('https');
-var EventEmitter=require('events').EventEmitter;
+var http = require('http');
+var https = require('https');
+var EventEmitter = require('events').EventEmitter;
 
-function request(opts, callback){
+function request(opts, callback) {
 
 	/*
 	// Use fiddler?
-	opts.path = (opts.protocol === 'https:'? "https" : "http" ) + '://' + opts.host + (opts.port?':' + opts.port:'') + opts.path;
-	if(!opts.headers){
+	opts.path = (opts.protocol === 'https:'? 'https' : 'http') + '://' + opts.host + (opts.port?':' + opts.port:'') + opts.path;
+	if (!opts.headers) {
 		opts.headers = {};
 	}
 	opts.headers.host = opts.host;
@@ -27,12 +27,12 @@ function request(opts, callback){
 
 	/**/
 	var req;
-	try{
-		req = (opts.protocol === 'https:'? https : http ).request(opts, callback);
+	try {
+		req = (opts.protocol === 'https:' ? https : http).request(opts, callback);
 	}
-	catch(e){
+	catch (e) {
 		console.error(e);
-		console.error(JSON.stringify(opts,null, 2));
+		console.error(JSON.stringify(opts, null, 2));
 	}
 	return req;
 };
@@ -41,7 +41,7 @@ function request(opts, callback){
 // @param req				- Request Object
 // @param options || url	- Map request to this
 // @param res				- Response, bind response to this
-exports.proxy = function(req, res, options, buffer){
+exports.proxy = function(req, res, options, buffer) {
 
 	//////////////////////////
 	// Inherit from events
@@ -56,17 +56,17 @@ exports.proxy = function(req, res, options, buffer){
 	// Define where this request is going
 	///////////////////////////
 
-	if(typeof(options)==='string'){
+	if (typeof(options) === 'string') {
 		options = url.parse(options);
 		options.method = req.method;
 	}
-	else{
-		if(!options.method){
+	else {
+		if (!options.method) {
 			options.method = req.method;
 		}
 	}
 
-	if(!options.headers){
+	if (!options.headers) {
 		options.headers = {};
 	}
 
@@ -76,9 +76,9 @@ exports.proxy = function(req, res, options, buffer){
 
 
 	// Loop through all req.headers
-	for( var header in req.headers ){
+	for (var header in req.headers) {
 		// Is this a custom header?
-		if(header.match(/^(x-|content-type)/i)){
+		if (header.match(/^(x-|content-type)/i)) {
 			options.headers[header] = req.headers[header];
 		}
 	}
@@ -91,22 +91,22 @@ exports.proxy = function(req, res, options, buffer){
 	// Preflight request
 	///////////////////////////////////
 
-	if( req.method.toUpperCase() === 'OPTIONS' ){
+	if (req.method.toUpperCase() === 'OPTIONS') {
 
 		// Response headers
 		var obj = {
 			'access-control-allow-origin': '*',
-			'access-control-allow-methods' : 'OPTIONS, TRACE, GET, HEAD, POST, PUT, DELETE',
-			'content-length' : 0
+			'access-control-allow-methods': 'OPTIONS, TRACE, GET, HEAD, POST, PUT, DELETE',
+			'content-length': 0
 //			'Access-Control-Max-Age': 3600, // seconds
 		};
 
 		// Return any headers the client has specified
-		if(req.headers["access-control-request-headers"]){
-			obj['access-control-allow-headers'] = req.headers["access-control-request-headers"];
+		if (req.headers['access-control-request-headers']) {
+			obj['access-control-allow-headers'] = req.headers['access-control-request-headers'];
 		}
 
-		res.writeHead(204, "no content", obj);
+		res.writeHead(204, 'no content', obj);
 
 		return res.end();
 	}
@@ -130,7 +130,7 @@ exports.proxy = function(req, res, options, buffer){
 		res.writeHead(502, {
 			'Content-Type': 'text/plain',
 			'Access-Control-Allow-Origin': '*',
-			'Access-Control-Allow-Methods' : 'OPTIONS, TRACE, GET, HEAD, POST, PUT'
+			'Access-Control-Allow-Methods': 'OPTIONS, TRACE, GET, HEAD, POST, PUT'
 		});
 
 		if (req.method !== 'HEAD') {
@@ -141,11 +141,11 @@ exports.proxy = function(req, res, options, buffer){
 			//if (process.env.NODE_ENV === 'production') {
 			//	res.write('Internal Server Error');
 			//}
-			res.write(JSON.stringify({error:err}));
+			res.write(JSON.stringify({error: err}));
 		}
 
 		try { res.end(); }
-		catch (ex) { console.error("res.end error: %s", ex.message); }
+		catch (ex) { console.error('res.end error: %s', ex.message); }
 	}
 
 
@@ -158,13 +158,13 @@ exports.proxy = function(req, res, options, buffer){
 		// Process the `reverseProxy` `response` when it's received.
 		//
 		if (req.httpVersion === '1.0') {
-			if (req.headers.connection){
+			if (req.headers.connection) {
 				_res.headers.connection = req.headers.connection;
 			} else {
 				_res.headers.connection = 'close';
 			}
 		} else if (!_res.headers.connection) {
-			if (req.headers.connection){
+			if (req.headers.connection) {
 				_res.headers.connection = req.headers.connection;
 			}
 			else {
@@ -179,7 +179,7 @@ exports.proxy = function(req, res, options, buffer){
 			delete _res.headers['transfer-encoding'];
 		}
 
-	
+
 		//
 		// When the `reverseProxy` `response` ends, end the
 		// corresponding outgoing `res` unless we have entered
@@ -210,7 +210,7 @@ exports.proxy = function(req, res, options, buffer){
 			ended = true;
 			if (!errState) {
 				try { res.end(); }
-				catch (ex) { console.error("res.end error: %s", ex.message); }
+				catch (ex) { console.error('res.end error: %s', ex.message); }
 
 				// Emit the `end` event now that we have completed proxying
 				self.emit('end', req, res, _res);
@@ -227,9 +227,9 @@ exports.proxy = function(req, res, options, buffer){
 		Object.keys(_res.headers).forEach(function (key) {
 			res.setHeader(key, _res.headers[key]);
 		});
-		res.setHeader("access-control-allow-methods", 'OPTIONS, TRACE, GET, HEAD, POST, PUT');
-		res.setHeader("access-control-allow-origin", "*");
-		
+		res.setHeader('access-control-allow-methods', 'OPTIONS, TRACE, GET, HEAD, POST, PUT');
+		res.setHeader('access-control-allow-origin', '*');
+
 		//
 		// StatusCode
 		// Should we supress error codes
@@ -237,7 +237,7 @@ exports.proxy = function(req, res, options, buffer){
 		var suppress_response_codes = url.parse(req.url, true).query.suppress_response_codes;
 
 		// Overwrite the nasty ones
-		res.writeHead( suppress_response_codes ? 200 : _res.statusCode );
+		res.writeHead(suppress_response_codes ? 200 : _res.statusCode);
 
 
 		//
@@ -262,8 +262,8 @@ exports.proxy = function(req, res, options, buffer){
 		});
 	});
 
-	if(!req){
-		console.error("proxyError");
+	if (!req) {
+		console.error('proxyError');
 		proxyError();
 		return;
 	}
@@ -277,11 +277,11 @@ exports.proxy = function(req, res, options, buffer){
 	req.on('error', proxyError);
 	_req.on('error', proxyError);
 
-	req.on('aborted', function(){
+	req.on('aborted', function() {
 		_req.abort();
 	});
 
-	_req.on('aborted', function(){
+	_req.on('aborted', function() {
 		_req.abort();
 	});
 
@@ -299,7 +299,7 @@ exports.proxy = function(req, res, options, buffer){
 		// Writing chunk data doesn not require an encoding parameter
 		var flushed = _req.write(chunk);
 
-		if (flushed){
+		if (flushed) {
 			return;
 		}
 
@@ -308,8 +308,8 @@ exports.proxy = function(req, res, options, buffer){
 			try {
 				req.resume();
 			}
-			catch (er){
-				console.error("req.resume error: %s", er.message);
+			catch (er) {
+				console.error('req.resume error: %s', er.message);
 			}
 		});
 
@@ -317,9 +317,9 @@ exports.proxy = function(req, res, options, buffer){
 		// Force the `drain` event in 100ms if it hasn't
 		// happened on its own.
 		//
-		setTimeout(function(){
+		setTimeout(function() {
 			_req.emit('drain');
-		},100);
+		}, 100);
 	});
 
 	//
@@ -334,7 +334,7 @@ exports.proxy = function(req, res, options, buffer){
 
 	//
 	// Buffer
-	if(buffer){
+	if (buffer) {
 		return !errState ? buffer.resume() : buffer.destroy();
 	}
 
@@ -369,7 +369,7 @@ exports.buffer = function (obj) {
 		destroy: function () {
 			this.end();
 			this.resume = function () {
-				console.error("Cannot resume buffer after destroying it.");
+				console.error('Cannot resume buffer after destroying it.');
 			};
 
 			onData = onEnd = events = obj = null;
