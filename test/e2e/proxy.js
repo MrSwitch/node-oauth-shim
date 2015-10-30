@@ -1,4 +1,4 @@
-var proxy = require('../src/proxy'),
+var proxy = require('../../src/proxy'),
 	url = require('url');
 
 // Setup a test server
@@ -118,7 +118,7 @@ describe('Proxying unsigned requests', function() {
 	it('with a multipart POST request', function(done) {
 		request(app)
 			.post('/proxy?path=' + api_url)
-			.attach('package.json', __dirname + '/../package.json')
+			.attach('package.json', __dirname + '/../../package.json')
 			.expect(/^POST\&(\-\-.*?)[\s\S]*(\1)\-\-$/)
 			.end(function(err, res) {
 				if (err) throw err;

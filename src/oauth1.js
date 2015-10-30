@@ -1,32 +1,17 @@
-//
+// ----------------------
 // OAuth1 authentication
 // ----------------------
-//
 
 var param = require('./utils/param');
 var sign = require('./sign');
 var url = require('url');
 var request = require('./utils/request');
-var error_credentials = require('./error_credentials');
 
 // token=>secret lookup
 var _token_secrets = {};
 
-
 module.exports = function(p, callback) {
 
-
-	// Missing Credentials
-	if (!p.client_secret) {
-		callback(p.redirect_uri, error_credentials(p));
-		return;
-	}
-
-
-	//
-	// Get the Authorization path
-	//
-	// p = merge(services[p.network], p);
 	var	path,
 		token_secret,
 		client_secret = p.client_secret,
@@ -36,10 +21,9 @@ module.exports = function(p, callback) {
 		oauth_consumer_key: p.client_id
 	};
 
-
-	//
 	// Refresh token?
 	// Does this include an access token?
+
 	if (p.access_token) {
 		// Disect access_token
 		var token = p.access_token.match(/^([^:]+)\:([^@]+)@(.+)$/);
@@ -56,25 +40,21 @@ module.exports = function(p, callback) {
 		}
 	}
 
-	//
 	// OAUTH 1: FIRST STEP
 	// The oauth_token has not been provisioned.
-	//
+
 	if (!p.oauth_token) {
 
 		// Change the path to be that of the intitial handshake
 		path = p.oauth ? p.oauth.request : null;
 
 		if (!path) {
-			return callback(p.redirect_uri, {
+			return callback({
 				error: 'required_request_url',
 				error_message: 'A state.oauth.request is required',
-				state: p.state || ''
 			});
 		}
 
-
-		//
 		// Create the URL of this service
 		// We are building up a callback URL which we want the client to easily be able to use.
 
@@ -100,27 +80,22 @@ module.exports = function(p, callback) {
 				opts.oauth_callback = encodeURIComponent(oauth_callback);
 			}
 		}
-
-
 	}
-	else {
 
-		//
-		// SECOND STEP
-		// The provider has provisioned a temporary token
-		//
+	// SECOND STEP
+	// The provider has provisioned a temporary token
+
+	else {
 
 		// Change the path to be that of the Providers token exchange
 		path = p.oauth ? p.oauth.token : null;
 
 		if (!path) {
-			return callback(p.redirect_uri, {
+			return callback({
 				error: 'required_token_url',
 				error_message: 'A state.oauth.token url is required to authenticate the oauth_token',
-				state: p.state || ''
 			});
 		}
-
 
 		// Check that there is a token
 		opts.oauth_token = p.oauth_token;
@@ -136,10 +111,9 @@ module.exports = function(p, callback) {
 
 		// If no secret is given, panic
 		if (!token_secret) {
-			return callback(p.redirect_uri, {
+			return callback({
 				error: (!p.oauth_token ? 'required' : 'invalid') + '_oauth_token',
 				error_message: 'The oauth_token ' + (!p.oauth_token ? ' is required' : ' was not recognised'),
-				state: p.state || ''
 			});
 		}
 	}
@@ -151,49 +125,28 @@ module.exports = function(p, callback) {
 	// Requst
 	var r = url.parse(signed_url);
 
-	//log('OAUTH-REQUEST-URL', signed_url);
-
 	// Make the call
-	request(r, null, function(err, res, data) {
+	request(r, null, function(err, res, data, json) {
 
 		if (err) {
 			/////////////////////////////
 			// The server failed to respond
 			/////////////////////////////
-			return callback(p.redirect_uri, {
+			return callback({
 				error: 'server_error',
-				error_message: 'Unable to connect to ' + signed_url,
-				state: p.state || ''
+				error_message: 'Unable to connect to ' + signed_url
 			});
-		}
-
-		//log('OAUTH-RESPONSE-DATA', data.toString(), res.statusCode);
-
-		var json = {};
-		try {
-			json = JSON.parse(data.toString());
-		}
-		catch (e) {
-			try {
-				json = param(data.toString());
-			}
-			catch (ee) {
-				console.error('ERROR', 'REQUEST: ' + signed_url, 'RESPONSE: ' + data.toString());
-			}
 		}
 
 		if (json.error || res.statusCode >= 400) {
 
-			// Error
 			if (!json.error) {
-				//log(json);
 				json = {
 					error: json.oauth_problem || 'auth_failed',
-					error_message: data.toString() || (res.statusCode + ' could not authenticate'),
-					state: p.state || ''
+					error_message: data.toString() || (res.statusCode + ' could not authenticate')
 				};
 			}
-			callback(p.redirect_uri, json);
+			callback(json);
 		}
 
 		// Was this a preflight request
@@ -224,7 +177,6 @@ module.exports = function(p, callback) {
 			// Step 2
 			// Construct the access token to send back to the client
 			json.access_token = json.oauth_token + ':' + json.oauth_token_secret + '@' + p.client_id;
-			json.state = p.state || '';
 
 			delete json.oauth_token;
 			delete json.oauth_token_secret;
@@ -248,7 +200,7 @@ module.exports = function(p, callback) {
 
 			// Return the entire response object to the client
 			// Often included is ID's, name etc which can save additional requests
-			callback(p.redirect_uri, json);
+			callback(json);
 		}
 
 		return;

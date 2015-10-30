@@ -7,17 +7,13 @@ var app = express();
 // Define a path where to put this OAuth Shim
 app.all('/proxy', oauthshim);
 
-// Create a key value list of {client_id => client_secret, ...}
-var creds = {};
+// Create a new file called "credentials.json", an array of objects containing {domain, client_id, client_secret, grant_url}
+var creds = require('./credentials.json');
 
-// Set credentials
-if (process.env.YAHOO_ID) creds[process.env.YAHOO_ID] = process.env.YAHOO_SECRET;
-if (process.env.TWITTER_ID) creds[process.env.TWITTER_ID] = process.env.TWITTER_SECRET;
-
-// Initiate the shim with Client ID's and secret, e.g.
+// Initiate the shim with credentials
 oauthshim.init(creds);
 
-// Set application to list on PORT
+// Set application to listen on PORT
 app.listen(process.env.PORT);
 
 console.log('OAuth Shim listening on ' + process.env.PORT);

@@ -26,11 +26,17 @@ app.listen(3000);
 app.all('/oauthproxy', oauthshim);
 
 // Initiate the shim with Client ID's and secret, e.g.
-oauthshim.init({
+oauthshim.init([{
 	// id : secret
-	'12345' : 'secret678910',
-	'abcde' : 'secretfghijk'
-});
+	client_id: '12345',
+	client_secret: 'secret678910',
+	// Define the grant_url where to exchange Authorisation codes for tokens
+	grant_url: 'https://linkedIn.com',
+	// Restrict the callback URL to a delimited list of callback paths
+	domain: 'test.com, example.com/redirect'
+}
+, ...
+]);
 ```
 
 The above code will put your shimming service to the pathname `http://localhost:3000/oauthproxy`.
@@ -43,24 +49,43 @@ An example of the above script can be found at [example.js](./example.js).
 To run `node example.js` locally:
 
 * Install developer dependencies `npm install -l`.
-* Create a `.env` file with a `NETWORK_ID` and `NETWORK_SECRET`. e.g. 
+* Create a `credentials.json` file. e.g.
 
-```bash
-TWITTER_ID='twit1234'
-TWITTER_SECRET='secret1234'
-YAHOO_ID='yahoo1234'
-YAHOO_SECRET='secret1234'
+```json
+[
+	{
+		name: 'twitter',
+		domain: 'http://myapp.com',
+		client_id: 'app1234',
+		client_secret: 'secret1234',
+		"grant_url": "https://api.twitter.com/oauth/access_token"
+	}
+	,{
+		name: 'yahoo',
+		domain: 'http://myapp.com',
+		client_id: 'app1234'
+		client_secret: 'secret1234',
+	}
+	, ...
+]
 ```
 
-* Then start up the server...
+* Start up the server...
 
 ```bash
-PORT=5500 env $(cat .env | xargs) node example.js
+PORT=5500 node example.js
 ```
 
-This sets the `.env` lines as local environment variables and will startup a server on port 5500. Now define your `redirect_uri` via `hello.init` to point to `http://localhost:5500/proxy`.
+Configure your [HelloJS](https://github.com/MrSwitch/hello.js) to use this service.
+```javascript
+hello.init({
+	twitter: 'app1234',
+	yahoo: 'app1234,'
+}, {
+	oauth_proxy: `http://localhost:5500/proxy`
+});
 
-
+Then use helloJS as normal.
 
 ## Customised Middleware
 
@@ -101,17 +126,22 @@ function customHandler(req, res, next){
 
 ### Asynchronsly retrieve the secret
 
-Rewrite the function `getCredentials` to change the way the client secret is stored/retrieved. This method is asyncronous, to access the secret from a database etc.. 
+Rewrite the function `getCredentials` to change the way the client secret is stored/retrieved. This method is asyncronous, to access the secret from a database etc..
 e.g...
 
 ```javascript
-oauthshim.getCredentials = function(id,callback){
+// Overwrite the credentials `get` method
+oauthshim.credentials.get = function(query, callback){
 	// Return
-	if(id === '12345'){
-		callback('secret678910');
+	if(query.client_id === '12345'){
+		callback({
+			client_secret: 'secret678910'
+		});
 	}
-	if(id === 'abcde'){
-		callback('secretfghijk');
+	if(query.client_id === 'abcde'){
+		callback({
+			client_secret: 'secret123456'
+		});
 	}
 }
 ```
@@ -165,7 +195,7 @@ OAuth 1.0 has a number of steps so forgive the verbosity here. An app is require
 
 The //auth-server signs the client request and redirects the user to the providers login page defined by `[OAUTH_AUTHRIZATION_URL]`.
 
-Once the user has signed in they are redirected back to a page on the developers app defined by `[REDIRECT_PATH]`. 
+Once the user has signed in they are redirected back to a page on the developers app defined by `[REDIRECT_PATH]`.
 
 The provider should have included an oauth_callback parameter which was defined by //auth-server, this includes part of the path where the token can be returned for an access token. The total path response shall look something like this.
 
@@ -202,7 +232,7 @@ The OAuth 1.0 API requires that each request is uniquely signed with the applica
 
 ### A simple GET Redirect
 
-To sign a request to `[API_PATH]`, use the `[ACCESS_TOKEN]` returned in OAuth 1.0 above and send to the auth-server. 
+To sign a request to `[API_PATH]`, use the `[ACCESS_TOKEN]` returned in OAuth 1.0 above and send to the auth-server.
 
 	?access_token=[ACCESS_TOKEN]
 	&path=[API_PATH]
@@ -215,7 +245,7 @@ If the initial request was other than a GET request, it will be proxied through 
 
 ### Signing a Request and returning the Signed Request URL
 
-If the end server supports CORS and a lot of data is expected to be either sent or returned. The burded on the oauthshim can be lessened by merely returning the signed request url and handling the action elsewhere. 
+If the end server supports CORS and a lot of data is expected to be either sent or returned. The burded on the oauthshim can be lessened by merely returning the signed request url and handling the action elsewhere.
 
 	?access_token=[ACCESS_TOKEN]
 	&path=[API_PATH]

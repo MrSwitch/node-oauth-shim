@@ -5,7 +5,6 @@
 // @author Andrew Dodson
 // @since July 2013
 
-
 var url = require('url');
 
 var qs = require('./utils/qs');
@@ -19,35 +18,32 @@ var proxy = require('./proxy.js');
 var oauth2 = require('./oauth2');
 var oauth1 = require('./oauth1');
 
-
-// Add the modules
-var services = {};
-
-
-
-//
 // Export a new instance of the API
-module.exports = function(req, res, next) {
-	return module.exports.request(req, res, next);
+module.exports = oauth_shim;
+
+// Map default options
+function oauth_shim(req, res, next) {
+	return oauth_shim.request(req, res, next);
 };
 
+// Get the credentials object for managing the getting and setting of credentials.
+var credentials = require('./credentials');
 
-
+// Assign the credentials object for remote access to overwrite its functions
+oauth_shim.credentials = credentials;
 
 // Set pretermined client-id's and client-secret
-module.exports.init = function(obj) {
-	services = merge(services, obj);
+oauth_shim.init = function(arr) {
+
+	// Apply the credentials
+	credentials.set(arr);
 };
 
-
-
-//
 // Request
 // Compose all the default operations of this component
-//
-module.exports.request = function(req, res, next) {
+oauth_shim.request = function(req, res, next) {
 
-	var self = module.exports;
+	var self = oauth_shim;
 
 	return self.interpret(req, res,
 			self.proxy.bind(self, req, res,
@@ -55,15 +51,11 @@ module.exports.request = function(req, res, next) {
 			self.unhandled.bind(self, req, res, next))));
 };
 
-
-
-//
 // Interpret the oauth login
 // Append data to the request object to hand over to the 'redirect' handler
-//
-module.exports.interpret = function(req, res, next) {
+oauth_shim.interpret = function(req, res, next) {
 
-	var self = module.exports;
+	var self = oauth_shim;
 
 	// if the querystring includes
 	// An authentication 'code',
@@ -81,6 +73,11 @@ module.exports.interpret = function(req, res, next) {
 	}
 	catch (e) {}
 
+	// Convert p.id into p.client_id
+	if (p.id && !p.client_id) {
+		p.client_id = p.id;
+	}
+
 	// Define the options
 	req.oauthshim = {
 		options: p
@@ -91,39 +88,58 @@ module.exports.interpret = function(req, res, next) {
 		p.redirect_uri = '';
 	}
 
-
-	//
 	// OAUTH2
-	//
 	if ((p.code || p.refresh_token) && p.redirect_uri) {
 
-		login(p, oauth2, function(session) {
+		// Get
+		login(p, function(match) {
 
-			// Redirect page
-			// With the Auth response, we need to return it to the parent
-			if (p.state) {
+			// OAuth2
+			oauth2(p, function(session) {
+
+				// Redirect page
+				// With the Auth response, we need to return it to the parent
 				session.state = p.state || '';
-			}
 
-			// OAuth Login
-			redirect(req, p.redirect_uri, session, next);
+				// OAuth Login
+				redirect(req, p.redirect_uri, session, next);
+			});
+
+		}, function(error) {
+			redirect(req, p.redirect_uri, error, next);
 		});
 
 		return;
 	}
 
-
-	//
 	// OAUTH1
-	//
 	else if (p.redirect_uri && ((p.oauth && parseInt(p.oauth.version, 10) === 1) || p.oauth_token)) {
 
-		p.location = url.parse('http' + (req.connection.encrypted ? 's' : '') + '://' + req.headers.host + req.url);
+		// Credentials...
+		login(p, function(match) {
+			// Add environment info.
+			p.location = url.parse('http' + (req.connection.encrypted ? 's' : '') + '://' + req.headers.host + req.url);
 
-		login(p, oauth1, function(path, session) {
-			redirect(req, path, session, next);
+			// OAuth1
+			oauth1(p, function(session) {
+
+				var loc = p.redirect_uri;
+
+				if (typeof session === 'string') {
+					loc = session;
+					session = {};
+				}
+				else {
+					// Add the state
+					session.state = p.state || '';
+				}
+
+				redirect(req, loc, session, next);
+			});
+
+		}, function(error) {
+			redirect(req, p.redirect_uri, error, next);
 		});
-
 
 		return;
 	}
@@ -135,23 +151,15 @@ module.exports.interpret = function(req, res, next) {
 
 };
 
-
-
-
-//
 // Proxy
 // Signs/Relays requests
-//
-module.exports.proxy = function(req, res, next) {
+oauth_shim.proxy = function(req, res, next) {
 
 	var p = param(url.parse(req.url).search);
 
-
-	//
 	// SUBSEQUENT SIGNING OF REQUESTS
 	// Previously we've been preoccupoed with handling OAuth authentication/
 	// However OAUTH1 also needs every request to be signed.
-	//
 	if (p.access_token && p.path) {
 
 		// errr
@@ -179,9 +187,7 @@ module.exports.proxy = function(req, res, next) {
 // Redirect Request
 // Is this request marked for redirect?
 //
-module.exports.redirect = function(req, res, next) {
-
-	var self = module.exports;
+oauth_shim.redirect = function(req, res, next) {
 
 	if (req.oauthshim && req.oauthshim.redirect) {
 
@@ -208,31 +214,13 @@ module.exports.redirect = function(req, res, next) {
 // unhandled
 // What to return if the request was previously unhandled
 //
-module.exports.unhandled = function(req, res, next) {
+oauth_shim.unhandled = function(req, res, next) {
 
 	var p = param(url.parse(req.url).search);
 
-	serveUp(res, {
-		error: {
-			code: 'invalid_request',
-			message: 'The request is unrecognised'
-		}
-	}, p.callback);
+	serveUp(res, errorObj('invalid_request', 'The request is unrecognised'), p.callback);
 
 };
-
-
-
-//
-// getCredentials
-// Given a network name and a client_id, returns the client_secret
-//
-module.exports.getCredentials = function(id, callback) {
-
-	callback(id ? services[id] : false);
-
-};
-
 
 
 
@@ -246,22 +234,33 @@ module.exports.getCredentials = function(id, callback) {
 //
 //
 
+function login(p, successHandler, errorHandler) {
 
+	credentials.get(p, function(match) {
 
-//
-// Login
-// OAuth2
-//
-function login(p, handler, callback) {
+		// Handle error
+		var check = credentials.check(p, match);
 
-	module.exports.getCredentials(p.client_id || p.id, function(client_secret) {
+		// Handle errors
+		if (check.error) {
 
-		p.client_secret = client_secret;
+			var e = check.error;
 
-		handler(p, callback);
+			errorHandler({
+				error: e.code,
+				error_message: e.message,
+				state: p.state || ''
+			});
+		}
+		else {
 
+			// Add the secret
+			p.client_secret = match.client_secret;
+
+			// Success
+			successHandler(match);
+		}
 	});
-
 }
 
 //
@@ -285,13 +284,19 @@ function signRequest(method, path, data, access_token, callback) {
 		return;
 	}
 
-	module.exports.getCredentials(token[3], function(client_secret) {
+	// Create a credentials object to append the secret too..
+	var query = {
+		client_id: token[3]
+	};
 
-		if (client_secret) {
+	// Update the credentials object with the client_secret
+	credentials.get(query, function(match) {
+
+		if (match.client_secret) {
 			path = sign(path, {
 				oauth_token: token[1],
-				oauth_consumer_key: token[3]
-			}, client_secret, token[2], null, method.toUpperCase(), data ? JSON.parse(data) : null);
+				oauth_consumer_key: query.client_id
+			}, match.client_secret, token[2], null, method.toUpperCase(), data ? JSON.parse(data) : null);
 		}
 
 		callback(path);
@@ -380,4 +385,13 @@ function proxyHandler(req, res, next, p, buffer, path) {
 		// Proxy
 		proxy.proxy(req, res, options, buffer);
 	}
+}
+
+function errorObj(code, message) {
+	return {
+		error: {
+			code: code,
+			message: message
+		}
+	};
 }

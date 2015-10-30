@@ -11,8 +11,8 @@
 // Dependiencies
 ////////////////////////////////
 
-var sign = require('../src/sign'),
-	oauthshim = require('../index'),
+var sign = require('../../src/sign'),
+	oauthshim = require('../../index'),
 	querystring = require('querystring'),
 	fs = require('fs'),
 	path = require('path');
@@ -27,13 +27,15 @@ var app = express();
 // SETUP SHIM LISTENING
 ////////////////////////////////
 
-oauthshim.init({
+oauthshim.init([{
 	// OAuth 1
-	'oauth_consumer_key': 'oauth_consumer_secret',
-
+	client_id: 'oauth_consumer_key',
+	client_secret: 'oauth_consumer_secret'
+}, {
 	// OAuth 2
-	'client_id': 'client_secret'
-});
+	client_id: 'client_id',
+	client_secret: 'client_secret'
+}]);
 
 // Start listening
 app.all('/proxy', oauthshim);
