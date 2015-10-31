@@ -162,8 +162,9 @@ module.exports = function(p, callback) {
 				oauth_token: json.oauth_token
 			};
 
-			// Version 1.0a requires the oauth_callback parameter for signing the request
-			if (version !== '1.0a') {
+			// Version 1.0a should return oauth_callback_confirmed=true,
+			// otherwise apply oauth_callback
+			if (json.oauth_callback_confirmed !== 'true') {
 				// Define the OAUTH CALLBACK Parameters
 				params.oauth_callback = oauth_callback;
 			}
