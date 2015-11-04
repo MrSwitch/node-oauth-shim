@@ -54,17 +54,17 @@ To run `node example.js` locally:
 ```json
 [
 	{
-		name: 'twitter',
-		domain: 'http://myapp.com',
-		client_id: 'app1234',
-		client_secret: 'secret1234',
+		"name": "twitter",
+		"domain": "http://myapp.com",
+		"client_id": "app1234",
+		"client_secret": "secret1234",
 		"grant_url": "https://api.twitter.com/oauth/access_token"
 	}
 	,{
-		name: 'yahoo',
-		domain: 'http://myapp.com',
-		client_id: 'app1234'
-		client_secret: 'secret1234',
+		"name": "yahoo",
+		"domain": "http://myapp.com",
+		"client_id": "app1234"
+		"client_secret": "secret1234",
 	}
 	, ...
 ]
@@ -77,6 +77,7 @@ PORT=5500 node example.js
 ```
 
 Configure your [HelloJS](https://github.com/MrSwitch/hello.js) to use this service.
+
 ```javascript
 hello.init({
 	twitter: 'app1234',
@@ -84,6 +85,7 @@ hello.init({
 }, {
 	oauth_proxy: `http://localhost:5500/proxy`
 });
+```
 
 Then use helloJS as normal.
 
