@@ -59,14 +59,14 @@ To run `node example.js` locally:
 		"client_id": "app1234",
 		"client_secret": "secret1234",
 		"grant_url": "https://api.twitter.com/oauth/access_token"
-	}
-	,{
+	},
+	{
 		"name": "yahoo",
 		"domain": "http://myapp.com",
-		"client_id": "app1234"
+		"client_id": "app1234",
 		"client_secret": "secret1234",
-	}
-	, ...
+	},
+	...
 ]
 ```
 
