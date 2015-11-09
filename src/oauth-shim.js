@@ -292,7 +292,7 @@ function signRequest(method, path, data, access_token, callback) {
 	// Update the credentials object with the client_secret
 	credentials.get(query, function(match) {
 
-		if (match.client_secret) {
+		if (match && match.client_secret) {
 			path = sign(path, {
 				oauth_token: token[1],
 				oauth_consumer_key: query.client_id
