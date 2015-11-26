@@ -179,9 +179,6 @@ module.exports = function(p, callback) {
 			// Construct the access token to send back to the client
 			json.access_token = json.oauth_token + ':' + json.oauth_token_secret + '@' + p.client_id;
 
-			delete json.oauth_token;
-			delete json.oauth_token_secret;
-
 			// Optionally return the refresh_token and expires_in if given
 			if (json.oauth_expires_in) {
 				json.expires_in = json.oauth_expires_in;

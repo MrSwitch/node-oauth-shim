@@ -576,6 +576,8 @@ describe('OAuth exchange token', function() {
 		request(app)
 			.get('/proxy?' + param(query))
 			.expect('Location', redirect_uri({
+				oauth_token: encodeURIComponent('oauth_token'),
+				oauth_token_secret: encodeURIComponent('oauth_token_secret'),
 				access_token: encodeURIComponent('oauth_token:oauth_token_secret@' + query.client_id)
 			}))
 			.expect(302)
@@ -849,6 +851,24 @@ describe('Proxying unsigned requests', function() {
 			});
 	});
 
+	xit('should not sign the request if the OAuth1 access_token does not match any on record', function(done) {
+
+		var get = credentials.get;
+		credentials.get = function(query, callback) {
+			callback(null);
+		}
+
+		var unknown_oauth1_token = "user_token_key:user_token_secret@app_token_key";
+
+		request(app)
+			.get('/proxy?then=proxy&access_token=' + unknown_oauth1_token + '&path=' + api_url)
+			.expect('GET')
+			// .expect('x-test-url', /access_token\=token/)
+			.end(function(err, res) {
+				if (err) throw err;
+				done();
+			});
+	});
 
 	it('should correctly return a 302 redirection', function() {
 
