@@ -88,16 +88,19 @@ describe('credentials', function() {
 			credentials.credentials = [match];
 		});
 
-		it('should error required_credentials when match is false', function() {
+		it('should error invalid_credentials when match is empty', function() {
 
 			var query = {
 				client_id: 'unregistered_token'
 			};
 
-			var output = credentials.check(query, false);
+			var a = [false, null, 0];
 
-			expect(output).to.have.property('error');
-			expect(output.error).to.have.property('code', 'invalid_credentials');
+			a.forEach(function(match) {
+				var output = credentials.check(query, match);
+				expect(output).to.have.property('error');
+				expect(output.error).to.have.property('code', 'invalid_credentials');
+			});
 
 		});
 
