@@ -61,9 +61,8 @@ oauth_shim.interpret = function(req, res, next) {
 	// An authentication 'code',
 	// client_id e.g. '1231232123',
 	// response_uri, '1231232123',
-	var p = param(url.parse(req.url).search);
+	var p = req.query || param(url.parse(req.url).search);
 	var state = p.state;
-
 
 	// Has the parameters been stored in the state attribute?
 	try {
