@@ -35,7 +35,7 @@ module.exports = function(p, callback, options) {
 	}
 
 	if (extendRequestBody) {
-		extendRequestBody(post);
+		extendRequestBody(post,p);
 	}
 
 	// Get the grant_url
@@ -66,7 +66,7 @@ module.exports = function(p, callback, options) {
 	}
 
 	if (extendRequestHeaders) {
-		extendRequestHeaders(requestHeaders);
+		extendRequestHeaders(requestHeaders,p);
 	}
 
 	r.headers = requestHeaders;
