@@ -24,7 +24,7 @@ module.exports = oauth_shim;
 // Map default options
 function oauth_shim(req, res, next) {
 	return oauth_shim.request(req, res, next);
-};
+}
 
 // Get the credentials object for managing the getting and setting of credentials.
 var credentials = require('./credentials');
@@ -55,7 +55,8 @@ oauth_shim.request = function(req, res, next) {
 // Append data to the request object to hand over to the 'redirect' handler
 oauth_shim.interpret = function(req, res, next) {
 
-	var self = oauth_shim;
+	var self = oauth_shim,
+		options = self.options || {};
 
 	// if the querystring includes
 	// An authentication 'code',
@@ -102,7 +103,7 @@ oauth_shim.interpret = function(req, res, next) {
 
 				// OAuth Login
 				redirect(req, p.redirect_uri, session, next);
-			});
+			}, options.oauth2);
 
 		}, function(error) {
 			redirect(req, p.redirect_uri, error, next);
@@ -134,7 +135,7 @@ oauth_shim.interpret = function(req, res, next) {
 				}
 
 				redirect(req, loc, session, next);
-			});
+			},options.oauth1);
 
 		}, function(error) {
 			redirect(req, p.redirect_uri, error, next);
