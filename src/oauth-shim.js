@@ -36,7 +36,7 @@ oauth_shim.credentials = credentials;
 oauth_shim.init = function(arr) {
 
 	// Apply the credentials
-	if(arr.networks !== undefined) credentials.set(arr);
+	if(arr.networks !== undefined) credentials.set(arr.networks);
 	if(arr.database !== undefined) {
 		db.init(arr.database);
 		db.connect();

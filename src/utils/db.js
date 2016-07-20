@@ -1,4 +1,4 @@
-var mysql = require('mysql')
+var mysql = require('mysql');
 
 var state = {
   pool: null
@@ -8,7 +8,7 @@ var configuration = {
   host: null,
   user: null,
   password: null,
-  port: 3306
+  port: 3306,
   database: null,
   table: null
 }
@@ -39,39 +39,43 @@ exports.get = function() {
   return state.pool
 }
 
-exports.getCreds(client_id,oauth_token, callback){
+exports.getOAuthTokenSecret = function(client_id, oauth_token, callback){
+  var pool = state.pool
+
   if(state.pool !== null){
     if(client_id !== undefined && oauth_token !== undefined) {
-      var fromDB = {};
-      fromDB.clientid = client_id;
-      fromDB.oauth_token = oauth_token;
-    }
-    sql = 'SELECT ' + configuration.table + '.clientid, ' + configuration.table + '.userid, ' + configuration.table + '.oauth_token, ' + configuration.table + '.oauth_token_secret, ' + configuration.table + '.screen_name, ' + configuration.table + '.x_auth_expires, ' + configuration.table + '.access_token FROM oauth WHERE ?';
-    db.get().query(sql, [fromDB], function(err, result) {
-      console.log(JSON.stringify(result));
-      if(callback !== undefined) {
-        callback();
-      } else {
-        return;
-      }
+      sql = mysql.format('SELECT ' + configuration.table + '.clientid, ' + configuration.table + '.userid, ' + configuration.table + '.oauth_token, ' + configuration.table + '.oauth_token_secret, ' + configuration.table + '.screen_name, ' + configuration.table + '.x_auth_expires, ' + configuration.table + '.access_token FROM oauth WHERE ' + configuration.table + '.clientid = ? AND ' + configuration.table + '.oauth_token = ?',[client_id, oauth_token]);
+      pool.query(sql, function(err, result) {
+        if(err) throw err;
+        var secret = null;
+        if(result !== undefined && result[0] !== undefined && result[0].oauth_token_secret !== undefined) secret = result[0].oauth_token_secret;
+        callback(secret);
+      });
+    } else {
+      callback();
     }
   }
+
 }
 
-exports.storeCreds(credentials, callback){
+exports.storeCreds = function(credentials, callback){
+  var pool = state.pool
   if(state.pool !== null){
-    if(credentials.client_id !== undefined && credentials.user_id !== undefined) {
+    if(credentials.client_id !== undefined && credentials.oauth_token !== undefined) {
       var toDB = {};
       toDB.clientid = credentials.client_id;
-      toDB.userid = credentials.user_id;
+      toDB.oauth_token = credentials.oauth_token;
       if(credentials.access_token !== undefined) toDB.access_token = credentials.access_token;
-      if(credentials.oauth_token !== undefined) toDB.oauth_token = credentials.oauth_token;
+      if(credentials.userid !== undefined) toDB.userid = credentials.userid;
       if(credentials.oauth_token_secret !== undefined) toDB.oauth_token_secret = credentials.oauth_token_secret;
       if(credentials.screen_name !== undefined) toDB.screen_name = credentials.screen_name;
       if(credentials.x_auth_expires !== undefined) toDB.x_auth_expires = credentials.x_auth_expires;
-    }
-    db.get().query('INSERT INTO `' + configuration.table + '` SET ? ON DUPLICATE KEY UPDATE ?', [toDB, toDB], function(err, result) {
-      if(callback !== undefined) callback();
+
+      sql = mysql.format('INSERT INTO `' + configuration.table + '` SET ? ON DUPLICATE KEY UPDATE ?', [toDB, toDB]);
+      pool.query(sql, function(err, result) {
+        if(err) throw err;
+        if(callback !== undefined) callback();
+      });
     }
   }
 }
