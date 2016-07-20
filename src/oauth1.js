@@ -3,6 +3,7 @@
 // ----------------------
 
 var param = require('./utils/param');
+var db = require('./utils/db');
 var sign = require('./sign');
 var url = require('url');
 var request = require('./utils/request');
@@ -107,6 +108,11 @@ module.exports = function(p, callback) {
 		// Get secret from temp storage
 		if (!token_secret && p.oauth_token in _token_secrets) {
 			token_secret = _token_secrets[p.oauth_token];
+		} else {
+			token_secret = db.getCreds({
+				client_id: p.client_id,
+				oauth_token: p.oauth_token
+			});
 		}
 
 		// If no secret is given, panic
@@ -155,6 +161,11 @@ module.exports = function(p, callback) {
 
 			// Store the oauth_token_secret
 			if (json.oauth_token_secret) {
+				db.storeCreds({
+					client_id: p.client_id,
+					oauth_token: json.oauth_token,
+					oauth_token_secret: json.oauth_token_secret
+				});
 				_token_secrets[json.oauth_token] = json.oauth_token_secret;
 			}
 
