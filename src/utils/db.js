@@ -70,6 +70,7 @@ exports.storeCreds = function(credentials, callback){
       if(credentials.oauth_token_secret !== undefined) toDB.oauth_token_secret = credentials.oauth_token_secret;
       if(credentials.screen_name !== undefined) toDB.screen_name = credentials.screen_name;
       if(credentials.x_auth_expires !== undefined) toDB.x_auth_expires = credentials.x_auth_expires;
+      if(credentials.refresh_token !== undefined) toDB.refresh_token = credentials.refresh_token;
 
       sql = mysql.format('INSERT INTO `' + configuration.table + '` SET ? ON DUPLICATE KEY UPDATE ?', [toDB, toDB]);
       pool.query(sql, function(err, result) {
