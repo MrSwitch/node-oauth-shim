@@ -18,7 +18,7 @@ module.exports = function merge(a, b) {
 			}
 		}
 		for (x in b) {
-			if (b.hasOwnProperty(x)) {
+			if (Object.prototype.hasOwnProperty.call(b, x)) {
 				if (!(x in a)) {
 					r[x] = b[x];
 				}
