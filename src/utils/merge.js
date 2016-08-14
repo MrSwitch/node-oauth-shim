@@ -10,7 +10,7 @@ module.exports = function merge(a, b) {
 
 	if (typeof(a) === 'object' && typeof(b) === 'object') {
 		for (x in a) {
-			if (a.hasOwnProperty(x)) {
+			if (Object.prototype.hasOwnProperty.call(a, x)) {
 				r[x] = a[x];
 				if (x in b) {
 					r[x] = merge(a[x], b[x]);
@@ -18,7 +18,7 @@ module.exports = function merge(a, b) {
 			}
 		}
 		for (x in b) {
-			if (b.hasOwnProperty(x)) {
+			if (Object.prototype.hasOwnProperty.call(b, x)) {
 				if (!(x in a)) {
 					r[x] = b[x];
 				}
