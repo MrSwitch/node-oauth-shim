@@ -822,7 +822,7 @@ describe('Proxying requests with a shimed access_token', function() {
 			.post('/proxy?then=proxy&access_token=' + access_token + '&path=' + api_url)
 			.attach('file', './package.json')
 			.expect('Access-Control-Allow-Origin', '*')
-			.expect(/^POST\&(\-\-.*?)[\s\S]*(\1)\-\-$/)
+			.expect(/^POST\&(\-\-.*?)[\s\S]*(\1)\-\-(\r\n)?$/)
 			.end(function(err, res) {
 				if (err) throw err;
 				done();
@@ -908,7 +908,7 @@ describe('Proxying unsigned requests', function() {
 			.post('/proxy?then=proxy&path=' + api_url)
 			.attach('file', './package.json')
 			.expect('Access-Control-Allow-Origin', '*')
-			.expect(/^POST\&(\-\-.*?)[\s\S]*(\1)\-\-$/)
+			.expect(/^POST\&(\-\-.*?)[\s\S]*(\1)\-\-(\r\n)?$/)
 			.end(function(err, res) {
 				if (err) throw err;
 				done();

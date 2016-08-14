@@ -119,7 +119,7 @@ describe('Proxying unsigned requests', function() {
 		request(app)
 			.post('/proxy?path=' + api_url)
 			.attach('package.json', __dirname + '/../../package.json')
-			.expect(/^POST\&(\-\-.*?)[\s\S]*(\1)\-\-$/)
+			.expect(/^POST\&(\-\-.*?)[\s\S]*(\1)\-\-(\r\n)?$/)
 			.end(function(err, res) {
 				if (err) throw err;
 				done();

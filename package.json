@@ -4,7 +4,8 @@
   "description": "OAuth2 shim for OAuth1 services, works with the clientside library HelloJS",
   "main": "index.js",
   "scripts": {
-    "test": "mocha test/**/*.js"
+    "test": "mocha test/**/*.js",
+    "server": "PORT=5500 nodemon example.js"
   },
   "repository": {
     "type": "git",
@@ -26,7 +27,7 @@
     "expect.js": "*",
     "express": "*",
     "mocha": "*",
-    "sinon": "^1.17.1",
+    "sinon": "*",
     "supertest": "*"
   }
 }
