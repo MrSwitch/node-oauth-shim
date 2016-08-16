@@ -156,9 +156,10 @@ The API adopts similar URL format as the standard OAuth2. Additional metadata ab
 
 [STATE] includes:
 
-||key||value||
-|oauth.version|2|
-|oauth.grant|[PROVIDERS_OAUTH2_GRANT_URL]|
+| key              | value
+|------------------|---------------------
+| oauth.version    | 2
+| oauth.grant      | [PROVIDERS_OAUTH2_GRANT_URL]
 
 
 The OAuth2 flow for the shim starts after a web application sends a client out to a providers site to grant permissions. The response is an authorization code "[AUTH_CODE]" which is returned to your site, this needs to be exchanged for an Access Token. Your page then needs to send this code to an //auth-server to be exhchanged for an access token, e.g.
@@ -180,12 +181,13 @@ The //auth-server exchanges the Authorization code for an access_token and redir
 
 [STATE] includes:
 
-||key||value||
-|oauth.version|1.0a|
-|oauth.request|[OAUTH_REQUEST_TOKEN_URL]|
-|oauth.auth|[OAUTH_AUTHORIZATION_URL]|
-|oauth.token|[OAUTH_TOKEN_URL]|
-|oauth_proxy|//auth-server|
+| key              | value
+|------------------|---------------------
+|oauth.version     | 1.0a
+|oauth.request     | [OAUTH_REQUEST_TOKEN_URL]
+|oauth.auth        | [OAUTH_AUTHORIZATION_URL]
+|oauth.token       | [OAUTH_TOKEN_URL]
+|oauth_proxy       | //auth-server
 
 OAuth 1.0 has a number of steps so forgive the verbosity here. An app is required to make an initial request to the //auth-server, which in-turn initiates the authentication flow.
 
