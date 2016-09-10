@@ -7,10 +7,124 @@ var sign = require('./sign');
 var url = require('url');
 var request = require('./utils/request');
 
-// token=>secret lookup
+// Local Token Map
 var _token_secrets = {};
 
-module.exports = function(p, callback) {
+// Token Prefix
+var TOKEN_PREFIX = 'oauthshim-oauthSecret-';
+
+function getRedisKey(token) {
+	return TOKEN_PREFIX + token;
+}
+
+function getSecret(oauthToken, redisClient, cb) {
+	if (redisClient) {
+		var key = getRedisKey(oauthToken);
+		redisClient.get(key, function (err, secret) {
+			cb((err) ? null : secret);
+		});
+	} else {
+		cb(_token_secrets[oauthToken]);
+	}
+}
+
+function saveSecret(oauthToken, secret, redisClient) {
+	if (redisClient) {
+		var key = getRedisKey(oauthToken);
+
+		redisClient.set(key, secret);
+		redisClient.expire(key, 60 * 60); // Expire in an hour
+	} else {
+		_token_secrets[oauthToken] = secret;
+	}
+}
+
+function doRequest(p, path, opts, client_secret, token_secret, oauth_callback, redisClient, callback) {
+	// Sign the request using the application credentials
+	var signed_url = sign(path, opts, client_secret, token_secret || null);
+
+	// Requst
+	var r = url.parse(signed_url);
+
+	// Make the call
+	request(r, null, function(err, res, data, json) {
+
+		if (err) {
+			/////////////////////////////
+			// The server failed to respond
+			/////////////////////////////
+			return callback({
+				error: 'server_error',
+				error_message: 'Unable to connect to ' + signed_url
+			});
+		}
+
+		if (json.error || res.statusCode >= 400) {
+
+			if (!json.error) {
+				json = {
+					error: json.oauth_problem || 'auth_failed',
+					error_message: data.toString() || (res.statusCode + ' could not authenticate')
+				};
+			}
+			callback(json);
+		}
+
+		// Was this a preflight request
+		else if (!opts.oauth_token) {
+			// Step 1
+
+			// Store the oauth_token_secret
+			if (json.oauth_token_secret) {
+				saveSecret(json.oauth_token, json.oauth_token_secret, redisClient);
+			}
+
+			var params = {
+				oauth_token: json.oauth_token
+			};
+
+			// Version 1.0a should return oauth_callback_confirmed=true,
+			// otherwise apply oauth_callback
+			if (json.oauth_callback_confirmed !== 'true') {
+				// Define the OAUTH CALLBACK Parameters
+				params.oauth_callback = oauth_callback;
+			}
+
+			// Great redirect the user to authenticate
+			var url = p.oauth.auth;
+			callback(url + (url.indexOf('?') > -1 ? '&' : '?') + param(params));
+		}
+
+		else {
+			// Step 2
+			// Construct the access token to send back to the client
+			json.access_token = json.oauth_token + ':' + json.oauth_token_secret + '@' + p.client_id;
+
+			// Optionally return the refresh_token and expires_in if given
+			if (json.oauth_expires_in) {
+				json.expires_in = json.oauth_expires_in;
+				delete json.oauth_expires_in;
+			}
+
+			// Optionally standarize any refresh token
+			if (json.oauth_session_handle) {
+				json.refresh_token = json.oauth_session_handle;
+				delete json.oauth_session_handle;
+
+				if (json.oauth_authorization_expires_in) {
+					json.refresh_expires_in = json.oauth_authorization_expires_in;
+					delete json.oauth_authorization_expires_in;
+				}
+			}
+
+			// Return the entire response object to the client
+			// Often included is ID's, name etc which can save additional requests
+			callback(json);
+		}
+	});
+}
+
+function oauth1(p, redisClient, callback) {
 
 	var	path,
 		token_secret,
@@ -105,102 +219,23 @@ module.exports = function(p, callback) {
 
 		// If token secret has not been supplied by an access_token in case of a refresh
 		// Get secret from temp storage
-		if (!token_secret && p.oauth_token in _token_secrets) {
-			token_secret = _token_secrets[p.oauth_token];
+		if (!token_secret) {
+			getSecret(p.oauth_token, redisClient, function (secret) {
+				if (!secret) {
+					return callback({
+						error: (!p.oauth_token ? 'required' : 'invalid') + '_oauth_token',
+						error_message: 'The oauth_token ' + (!p.oauth_token ? ' is required' : ' was not recognised'),
+					});
+				}
+
+				doRequest(p, path, opts, client_secret, secret, oauth_callback,  redisClient, callback);
+			});
+			return;
 		}
 
-		// If no secret is given, panic
-		if (!token_secret) {
-			return callback({
-				error: (!p.oauth_token ? 'required' : 'invalid') + '_oauth_token',
-				error_message: 'The oauth_token ' + (!p.oauth_token ? ' is required' : ' was not recognised'),
-			});
-		}
 	}
 
+	doRequest(p, path, opts, client_secret, token_secret, oauth_callback, redisClient, callback);
+}
 
-	// Sign the request using the application credentials
-	var signed_url = sign(path, opts, client_secret, token_secret || null);
-
-	// Requst
-	var r = url.parse(signed_url);
-
-	// Make the call
-	request(r, null, function(err, res, data, json) {
-
-		if (err) {
-			/////////////////////////////
-			// The server failed to respond
-			/////////////////////////////
-			return callback({
-				error: 'server_error',
-				error_message: 'Unable to connect to ' + signed_url
-			});
-		}
-
-		if (json.error || res.statusCode >= 400) {
-
-			if (!json.error) {
-				json = {
-					error: json.oauth_problem || 'auth_failed',
-					error_message: data.toString() || (res.statusCode + ' could not authenticate')
-				};
-			}
-			callback(json);
-		}
-
-		// Was this a preflight request
-		else if (!opts.oauth_token) {
-			// Step 1
-
-			// Store the oauth_token_secret
-			if (json.oauth_token_secret) {
-				_token_secrets[json.oauth_token] = json.oauth_token_secret;
-			}
-
-			var params = {
-				oauth_token: json.oauth_token
-			};
-
-			// Version 1.0a should return oauth_callback_confirmed=true,
-			// otherwise apply oauth_callback
-			if (json.oauth_callback_confirmed !== 'true') {
-				// Define the OAUTH CALLBACK Parameters
-				params.oauth_callback = oauth_callback;
-			}
-
-			// Great redirect the user to authenticate
-			var url = p.oauth.auth;
-			callback(url + (url.indexOf('?') > -1 ? '&' : '?') + param(params));
-		}
-
-		else {
-			// Step 2
-			// Construct the access token to send back to the client
-			json.access_token = json.oauth_token + ':' + json.oauth_token_secret + '@' + p.client_id;
-
-			// Optionally return the refresh_token and expires_in if given
-			if (json.oauth_expires_in) {
-				json.expires_in = json.oauth_expires_in;
-				delete json.oauth_expires_in;
-			}
-
-			// Optionally standarize any refresh token
-			if (json.oauth_session_handle) {
-				json.refresh_token = json.oauth_session_handle;
-				delete json.oauth_session_handle;
-
-				if (json.oauth_authorization_expires_in) {
-					json.refresh_expires_in = json.oauth_authorization_expires_in;
-					delete json.oauth_authorization_expires_in;
-				}
-			}
-
-			// Return the entire response object to the client
-			// Often included is ID's, name etc which can save additional requests
-			callback(json);
-		}
-
-		return;
-	});
-};
+module.exports = oauth1;

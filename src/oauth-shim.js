@@ -28,6 +28,7 @@ function oauth_shim(req, res, next) {
 
 // Get the credentials object for managing the getting and setting of credentials.
 var credentials = require('./credentials');
+var redisClient;
 
 // Assign the credentials object for remote access to overwrite its functions
 oauth_shim.credentials = credentials;
@@ -37,6 +38,10 @@ oauth_shim.init = function(arr) {
 
 	// Apply the credentials
 	credentials.set(arr);
+};
+
+oauth_shim.useRedis = function(client) {
+	redisClient = client;
 };
 
 // Request
@@ -120,7 +125,7 @@ oauth_shim.interpret = function(req, res, next) {
 			p.location = url.parse('http' + (req.connection.encrypted ? 's' : '') + '://' + req.headers.host + req.url);
 
 			// OAuth1
-			oauth1(p, function(session) {
+			oauth1(p, redisClient, function(session) {
 
 				var loc = p.redirect_uri;
 
