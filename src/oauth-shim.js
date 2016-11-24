@@ -10,7 +10,7 @@ var url = require('url');
 var qs = require('./utils/qs');
 var merge = require('./utils/merge');
 var param = require('./utils/param');
-
+var db = require('./utils/db');
 
 var sign = require('./sign.js');
 var proxy = require('./proxy.js');
@@ -36,7 +36,11 @@ oauth_shim.credentials = credentials;
 oauth_shim.init = function(arr) {
 
 	// Apply the credentials
-	credentials.set(arr);
+	if(arr.networks !== undefined) credentials.set(arr.networks);
+	if(arr.database !== undefined) {
+		db.init(arr.database);
+		db.connect();
+	}
 };
 
 // Request
