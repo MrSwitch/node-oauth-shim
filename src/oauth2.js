@@ -7,10 +7,15 @@ var request = require('./utils/request');
 var param = require('./utils/param');
 var url = require('url');
 
-module.exports = function(p, callback) {
+module.exports = function(p, callback, options) {
+
+	if (!options) options = {};
 
 	// Make the OAuth2 request
-	var post = null;
+	var post = null,
+		extendRequestBody = options.extendRequestBody,
+		extendRequestHeaders = options.extendRequestHeaders;
+
 	if (p.code) {
 		post = {
 			code: p.code,
@@ -29,6 +34,10 @@ module.exports = function(p, callback) {
 		};
 	}
 
+	if (extendRequestBody) {
+		extendRequestBody(post,p);
+	}
+
 	// Get the grant_url
 	var grant_url = p.oauth ? p.oauth.grant : false;
 
@@ -43,17 +52,24 @@ module.exports = function(p, callback) {
 	post = param(post, function(r) {return r;});
 
 	// Create the request
-	var r = url.parse(grant_url);
+	var r = url.parse(grant_url),
+		requestHeaders = {
+			'Content-length': post.length,
+			'Content-type': 'application/x-www-form-urlencoded'
+		};
+
 	r.method = 'POST';
-	r.headers = {
-		'Content-length': post.length,
-		'Content-type': 'application/x-www-form-urlencoded'
-	};
 
 	// Workaround for Vimeo, which requires an extra Authorization header
 	if (p.authorisation === 'header') {
-		r.headers.Authorization = 'basic ' + new Buffer(p.client_id + ':' + p.client_secret).toString('base64');
+		requestHeaders.Authorization = 'basic ' + new Buffer(p.client_id + ':' + p.client_secret).toString('base64');
 	}
+
+	if (extendRequestHeaders) {
+		extendRequestHeaders(requestHeaders,p);
+	}
+
+	r.headers = requestHeaders;
 
 	//opts.body = post;
 	request(r, post, function(err, res, body, data) {
