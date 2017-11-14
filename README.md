@@ -1,7 +1,11 @@
 # OAuth-shim
 
-[![Greenkeeper badge](https://badges.greenkeeper.io/MrSwitch/node-oauth-shim.svg)](https://greenkeeper.io/)
 Middleware offering OAuth1/OAuth2 authorization handshake for web applications using the [HelloJS](http://adodson.com/hello.js) clientside authentication library.
+
+[![Greenkeeper badge](https://badges.greenkeeper.io/MrSwitch/node-oauth-shim.svg)](https://greenkeeper.io/)
+[![Known Vulnerabilities](https://snyk.io/test/github/mrswitch/node-oauth-shim/badge.svg)](https://snyk.io/test/github/mrswitch/node-oauth-shim)
+[![Build Status](https://img.shields.io/travis/MrSwitch/node-oauth-shim.svg?style=flat)](https://travis-ci.org/MrSwitch/node-oauth-shim)
+[![NPM Version](https://img.shields.io/npm/v/oauth-shim.svg?style=flat&branch=master)](https://npmjs.org/package/oauth-shim)
 
 
 ## tl;dr;
