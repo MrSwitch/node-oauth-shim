@@ -1,4 +1,6 @@
 # OAuth-shim
+
+[![Greenkeeper badge](https://badges.greenkeeper.io/MrSwitch/node-oauth-shim.svg)](https://greenkeeper.io/)
 Middleware offering OAuth1/OAuth2 authorization handshake for web applications using the [HelloJS](http://adodson.com/hello.js) clientside authentication library.
 
 
