@@ -24,7 +24,7 @@ module.exports = oauth_shim;
 // Map default options
 function oauth_shim(req, res, next) {
 	return oauth_shim.request(req, res, next);
-};
+}
 
 // Get the credentials object for managing the getting and setting of credentials.
 var credentials = require('./credentials');
@@ -46,16 +46,14 @@ oauth_shim.request = function(req, res, next) {
 	var self = oauth_shim;
 
 	return self.interpret(req, res,
-			self.proxy.bind(self, req, res,
+		self.proxy.bind(self, req, res,
 			self.redirect.bind(self, req, res,
-			self.unhandled.bind(self, req, res, next))));
+				self.unhandled.bind(self, req, res, next))));
 };
 
 // Interpret the oauth login
 // Append data to the request object to hand over to the 'redirect' handler
 oauth_shim.interpret = function(req, res, next) {
-
-	var self = oauth_shim;
 
 	// if the querystring includes
 	// An authentication 'code',
@@ -70,7 +68,9 @@ oauth_shim.interpret = function(req, res, next) {
 		p = merge(p, JSON.parse(p.state));
 		p.state = state; // set this back to the string
 	}
-	catch (e) {}
+	catch (e) {
+		// Continue
+	}
 
 	// Convert p.id into p.client_id
 	if (p.id && !p.client_id) {
@@ -91,7 +91,7 @@ oauth_shim.interpret = function(req, res, next) {
 	if ((p.code || p.refresh_token) && p.redirect_uri) {
 
 		// Get
-		login(p, function(match) {
+		login(p, function() {
 
 			// OAuth2
 			oauth2(p, function(session) {
@@ -108,14 +108,14 @@ oauth_shim.interpret = function(req, res, next) {
 			redirect(req, p.redirect_uri, error, next);
 		});
 
-		return;
+
 	}
 
 	// OAUTH1
 	else if (p.redirect_uri && ((p.oauth && parseInt(p.oauth.version, 10) === 1) || p.oauth_token)) {
 
 		// Credentials...
-		login(p, function(match) {
+		login(p, function() {
 			// Add environment info.
 			p.location = url.parse('http' + (req.connection.encrypted ? 's' : '') + '://' + req.headers.host + req.url);
 
@@ -140,7 +140,7 @@ oauth_shim.interpret = function(req, res, next) {
 			redirect(req, p.redirect_uri, error, next);
 		});
 
-		return;
+
 	}
 
 	// Move on
@@ -166,20 +166,19 @@ oauth_shim.proxy = function(req, res, next) {
 
 		signRequest((p.method || req.method), p.path, p.data, p.access_token, proxyHandler.bind(null, req, res, next, p, buffer));
 
-		return;
+
 	}
 	else if (p.path) {
 
 		proxyHandler(req, res, next, p, undefined, p.path);
 
-		return;
+
 	}
 
 	else if (next) {
 		next();
 	}
 };
-
 
 
 //
@@ -197,7 +196,7 @@ oauth_shim.redirect = function(req, res, next) {
 
 		res.writeHead(302, {
 			'Access-Control-Allow-Origin': '*',
-			'Location': path
+			Location: path
 		});
 
 		res.end();
@@ -208,19 +207,17 @@ oauth_shim.redirect = function(req, res, next) {
 };
 
 
-
 //
 // unhandled
 // What to return if the request was previously unhandled
 //
-oauth_shim.unhandled = function(req, res, next) {
+oauth_shim.unhandled = function(req, res) {
 
 	var p = param(url.parse(req.url).search);
 
 	serveUp(res, errorObj('invalid_request', 'The request is unrecognised'), p.callback);
 
 };
-
 
 
 //
@@ -268,7 +265,7 @@ function login(p, successHandler, errorHandler) {
 
 function signRequest(method, path, data, access_token, callback) {
 
-	var token = access_token.match(/^([^:]+)\:([^@]+)@(.+)$/);
+	var token = access_token.match(/^([^:]+):([^@]+)@(.+)$/);
 
 	if (!token) {
 
@@ -302,7 +299,6 @@ function signRequest(method, path, data, access_token, callback) {
 
 	});
 }
-
 
 
 //
@@ -340,8 +336,6 @@ function serveUp(res, body, jsonp_callback) {
 	res.writeHead(200, {'Access-Control-Allow-Origin': '*'});
 	res.end(body, 'utf8');
 }
-
-
 
 
 function proxyHandler(req, res, next, p, buffer, path) {

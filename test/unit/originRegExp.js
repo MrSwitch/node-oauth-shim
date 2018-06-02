@@ -5,7 +5,7 @@ describe('originRegExp', function() {
 	it('should set return a regular expression', function() {
 
 		var valid_url = 'https://test.com:8080/awesome';
-		var reg = originRegExp("");
+		var reg = originRegExp('');
 		expect(reg).to.be.a('regexp');
 		expect(valid_url.match(reg)).to.be.ok();
 
@@ -20,12 +20,12 @@ describe('originRegExp', function() {
 
 		// Valid
 		['test.com'
-		,'//test.com'
-		,'://test.com'
-		,'https://test.com',
-		,'http://test.com, https://test.com',
-		,'https://test.com:8080/awesome'
-		,'test.com:8080/*'
+			, '//test.com'
+			, '://test.com'
+			, 'https://test.com'
+			, 'http://test.com, https://test.com'
+			, 'https://test.com:8080/awesome'
+			, 'test.com:8080/*'
 		].forEach(function(pattern) {
 			var reg = originRegExp(pattern);
 
@@ -46,7 +46,7 @@ describe('originRegExp', function() {
 
 		// Invalid syntax
 		['?&*)SDASD'
-		,'//\/\/\&(ASDT$%£!"£$%^&*()'
+			, '////&(ASDT$%£!"£$%^&*()'
 		].forEach(function(pattern) {
 			var reg = originRegExp(pattern);
 

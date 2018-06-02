@@ -4,6 +4,7 @@
   "description": "OAuth2 shim for OAuth1 services, works with the clientside library HelloJS",
   "main": "index.js",
   "scripts": {
+    "lint": "eslint ./",
     "test": "mocha test/**/*.js",
     "server": "PORT=5500 nodemon example.js"
   },
@@ -24,10 +25,13 @@
   },
   "devDependencies": {
     "connect": "*",
+    "eslint": "^4.19.1",
+    "eslint-config-mr": "^0.1.0",
     "expect.js": "*",
     "express": "*",
     "mocha": "*",
     "sinon": "*",
     "supertest": "*"
-  }
+  },
+  "dependencies": {}
 }
