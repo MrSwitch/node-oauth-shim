@@ -1,9 +1,9 @@
-var proxy = require('../../src/proxy'),
-	url = require('url');
+var proxy = require('../../src/proxy');
+var url = require('url');
 
 // Setup a test server
-var request = require('supertest'),
-	express = require('express');
+var request = require('supertest');
+var express = require('express');
 var app = express();
 
 /////////////////////////////////
@@ -26,11 +26,11 @@ app.all('/proxy', function(req, res) {
 // FAKE REMOTE SERVER
 /////////////////////////////////
 
-var connect = require('connect');
-var remoteServer = connect(), srv;
-var test_port = 1337,
-	api_url = 'http://localhost:' + test_port;
-
+var express = require('express');
+var remoteServer = express();
+var srv;
+var test_port = 1337;
+var api_url = 'http://localhost:' + test_port;
 
 
 ////////////////////////////////
@@ -48,9 +48,11 @@ remoteServer.use('/', function(req, res) {
 
 	res.writeHead(200);
 
-	res.write([req.method, req.headers.header].filter(function(a) {return !!a;}).join('&') + '&');
+	res.write([req.method, req.headers.header].filter(function(a) {
+		return !!a;
+	}).join('&') + '&');
 
-//	console.log(req.headers);
+	//	console.log(req.headers);
 
 	req.on('data', function(data, encoding) {
 		res.write(data, encoding);
@@ -66,7 +68,6 @@ remoteServer.use('/', function(req, res) {
 });
 
 
-
 beforeEach(function() {
 	srv = remoteServer.listen(test_port);
 });
@@ -74,7 +75,6 @@ beforeEach(function() {
 afterEach(function() {
 	srv.close();
 });
-
 
 
 describe('Proxying unsigned requests', function() {
@@ -87,7 +87,7 @@ describe('Proxying unsigned requests', function() {
 		request(app)
 			.get('/proxy?path=' + api_url)
 			.expect('GET&')
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -98,7 +98,7 @@ describe('Proxying unsigned requests', function() {
 			.get('/proxy?path=' + api_url)
 			.set('x-custom-header', 'custom-header')
 			.expect('GET&')
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -109,7 +109,7 @@ describe('Proxying unsigned requests', function() {
 			.post('/proxy?path=' + api_url)
 			.send('POST_DATA')
 			.expect('POST&POST_DATA')
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -119,8 +119,8 @@ describe('Proxying unsigned requests', function() {
 		request(app)
 			.post('/proxy?path=' + api_url)
 			.attach('package.json', __dirname + '/../../package.json')
-			.expect(/^POST\&(\-\-.*?)[\s\S]*(\1)\-\-(\r\n)?$/)
-			.end(function(err, res) {
+			.expect(/^POST&(--.*?)[\s\S]*(\1)--(\r\n)?$/)
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -130,7 +130,7 @@ describe('Proxying unsigned requests', function() {
 		request(app)
 			.del('/proxy?path=' + api_url)
 			.expect('DELETE&')
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});

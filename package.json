@@ -4,6 +4,7 @@
   "description": "OAuth2 shim for OAuth1 services, works with the clientside library HelloJS",
   "main": "index.js",
   "scripts": {
+    "lint": "eslint ./",
     "test": "mocha test/**/*.js",
     "server": "PORT=5500 nodemon example.js"
   },
@@ -23,11 +24,13 @@
     "url": "https://github.com/MrSwitch/node-oauth-shim/issues"
   },
   "devDependencies": {
-    "connect": "*",
-    "expect.js": "*",
-    "express": "*",
-    "mocha": "*",
-    "sinon": "*",
-    "supertest": "*"
-  }
+    "eslint": "^4.19.1",
+    "eslint-config-mr": "^0.1.0",
+    "expect.js": "^0.3.1",
+    "express": "^4.16.3",
+    "mocha": "^5.2.0",
+    "sinon": "^5.0.10",
+    "supertest": "^3.1.0"
+  },
+  "dependencies": {}
 }

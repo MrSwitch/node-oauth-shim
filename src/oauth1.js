@@ -12,10 +12,10 @@ var _token_secrets = {};
 
 module.exports = function(p, callback) {
 
-	var	path,
-		token_secret,
-		client_secret = p.client_secret,
-		version = (p.oauth ? p.oauth.version : 1);
+	var	path;
+	var token_secret;
+	var client_secret = p.client_secret;
+	var version = (p.oauth ? p.oauth.version : 1);
 
 	var opts = {
 		oauth_consumer_key: p.client_id
@@ -26,7 +26,7 @@ module.exports = function(p, callback) {
 
 	if (p.access_token) {
 		// Disect access_token
-		var token = p.access_token.match(/^([^:]+)\:([^@]+)@(.+)$/);
+		var token = p.access_token.match(/^([^:]+):([^@]+)@(.+)$/);
 		if (token) {
 
 			// Assign the token
@@ -201,6 +201,6 @@ module.exports = function(p, callback) {
 			callback(json);
 		}
 
-		return;
+
 	});
 };

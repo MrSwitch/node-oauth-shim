@@ -6,14 +6,14 @@
 //
 module.exports = function(s, encode) {
 
-	var a = {},
-		m;
+	var a = {};
+	var m;
 
 	if (typeof(s) === 'string') {
 
 		var decode = encode || decodeURIComponent;
 
-		m = s.replace(/^[\#\?]/, '').match(/([^=\/\&]+)=([^\&]+)/g);
+		m = s.replace(/^[#?]/, '').match(/([^=/&]+)=([^&]+)/g);
 
 		if (m) {
 			m.forEach(function(match) {
@@ -31,7 +31,7 @@ module.exports = function(s, encode) {
 
 		for (var x in o) {
 			if (o.hasOwnProperty(x) && o[x] !== null) {
-				a.push([x, o[x] === '?' ? '?' : encode(o[x]) ].join('='));
+				a.push([x, o[x] === '?' ? '?' : encode(o[x])].join('='));
 			}
 		}
 
