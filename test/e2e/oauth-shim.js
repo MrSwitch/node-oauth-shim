@@ -43,8 +43,8 @@ app.all('/proxy', oauthshim);
 // This reproduces a third party OAuth and API Server
 ////////////////////////////////
 
-var connect = require('connect');
-var remoteServer = connect();
+var express = require('express');
+var remoteServer = express();
 var srv;
 var test_port = 3333;
 

@@ -26,8 +26,8 @@ app.all('/proxy', function(req, res) {
 // FAKE REMOTE SERVER
 /////////////////////////////////
 
-var connect = require('connect');
-var remoteServer = connect();
+var express = require('express');
+var remoteServer = express();
 var srv;
 var test_port = 1337;
 var api_url = 'http://localhost:' + test_port;
