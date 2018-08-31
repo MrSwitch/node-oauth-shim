@@ -9,6 +9,10 @@
     "server": "PORT=5500 nodemon example.js",
     "test": "npm run lint && npm run spec"
   },
+  "files": [
+    "src/",
+    "index.js"
+  ],
   "repository": {
     "type": "git",
     "url": "git@github.com/MrSwitch/node-oauth-shim"
