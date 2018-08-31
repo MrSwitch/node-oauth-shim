@@ -2,3 +2,5 @@ node_modules/
 credentials.json
 npm-debug.log
 .env
+.coveralls.yml
+.nyc_output/

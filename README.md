@@ -6,6 +6,7 @@ Middleware offering OAuth1/OAuth2 authorization handshake for web applications u
 [![Known Vulnerabilities](https://snyk.io/test/github/mrswitch/node-oauth-shim/badge.svg)](https://snyk.io/test/github/mrswitch/node-oauth-shim)
 [![Build Status](https://img.shields.io/travis/MrSwitch/node-oauth-shim.svg?style=flat)](https://travis-ci.org/MrSwitch/node-oauth-shim)
 [![NPM Version](https://img.shields.io/npm/v/oauth-shim.svg?style=flat&branch=master)](https://npmjs.org/package/oauth-shim)
+[![Coverage Status](https://coveralls.io/repos/github/MrSwitch/node-oauth-shim/badge.svg?branch=master)](https://coveralls.io/github/MrSwitch/node-oauth-shim?branch=master)
 
 
 ## tl;dr;
