@@ -3,10 +3,10 @@
 module.exports = function(str) {
 
 	// Split the string up into parts
-	str = '^(' + str.split(/[\,\s]+/).map(function(pattern) {
+	str = '^(' + str.split(/[,\s]+/).map(function(pattern) {
 
 		// Escape weird characters
-		pattern = pattern.replace(/[^a-z0-9\/\:\*]/g, '\\$&');
+		pattern = pattern.replace(/[^a-z0-9/:*]/g, '\\$&');
 
 		// Prefix
 		if (!pattern.match(/^https?:\/\//)) {

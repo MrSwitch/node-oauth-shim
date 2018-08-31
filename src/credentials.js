@@ -22,7 +22,7 @@ module.exports = {
 	get: function(query, callback) {
 
 		// Loop through the services
-		for(var i = 0, len = this.credentials.length; i < len; i++) {
+		for (var i = 0, len = this.credentials.length; i < len; i++) {
 
 			// Item
 			var item = this.credentials[i];
@@ -45,7 +45,7 @@ module.exports = {
 			// No client id
 			return error('required_credentials', 'The client_id "' + query.client_id + '" is missing from the request');
 		}
-		else if(!match) {
+		else if (!match) {
 			// No matching details found
 			return error('invalid_credentials', 'The client_id "' + query.client_id + '" is unknown');
 		}
@@ -69,7 +69,7 @@ module.exports = {
 			return error('invalid_credentials', 'Redirect URL "' + query.redirect_uri + '" must match "' + match.domain + '"');
 		}
 		// Return
-		return {success:true};
+		return {success: true};
 	}
 };
 

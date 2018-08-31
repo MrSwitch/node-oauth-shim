@@ -6,7 +6,8 @@
 
 module.exports = function merge(a, b) {
 
-	var x, r = {};
+	var x;
+	var r = {};
 
 	if (typeof(a) === 'object' && typeof(b) === 'object') {
 		for (x in a) {

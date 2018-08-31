@@ -5,9 +5,9 @@
 //
 // @author Andrew Dodson
 
-var crypto = require('crypto'),
-	url = require('url'),
-	querystring = require('querystring');
+var crypto = require('crypto');
+var url = require('url');
+var querystring = require('querystring');
 
 var merge = require('./utils/merge');
 
@@ -18,11 +18,11 @@ function hashString(key, str, encoding) {
 }
 
 function encode(s) {
-	return encodeURIComponent(s).replace(/\!/g, '%21')
-         .replace(/\'/g, '%27')
-         .replace(/\(/g, '%28')
-         .replace(/\)/g, '%29')
-         .replace(/\*/g, '%2A');
+	return encodeURIComponent(s).replace(/!/g, '%21')
+		.replace(/'/g, '%27')
+		.replace(/\(/g, '%28')
+		.replace(/\)/g, '%29')
+		.replace(/\*/g, '%2A');
 }
 
 module.exports = function(uri, opts, consumer_secret, token_secret, nonce, method, data) {
@@ -33,8 +33,8 @@ module.exports = function(uri, opts, consumer_secret, token_secret, nonce, metho
 	}
 
 	// Seperate querystring from path
-	var path = uri.replace(/[\?\#].*/, ''),
-		qs = querystring.parse(url.parse(uri).query);
+	var path = uri.replace(/[?#].*/, '');
+	var qs = querystring.parse(url.parse(uri).query);
 
 	// Create OAuth Properties
 	var query = {
@@ -52,8 +52,8 @@ module.exports = function(uri, opts, consumer_secret, token_secret, nonce, metho
 	// Sort in order of properties
 	var keys = Object.keys(query);
 	keys.sort();
-	var params = [],
-		_queryString = [];
+	var params = [];
+	var _queryString = [];
 
 	keys.forEach(function(k) {
 		if (query[k]) {
@@ -67,7 +67,7 @@ module.exports = function(uri, opts, consumer_secret, token_secret, nonce, metho
 	params = params.join('&');
 	_queryString = _queryString.join('&');
 
-	var http = [method || 'GET', encode(path).replace(/\+/g, ' ').replace(/\%7E/g, '~'), encode(params).replace(/\+/g, ' ').replace(/\%7E/g, '~') ];
+	var http = [method || 'GET', encode(path).replace(/\+/g, ' ').replace(/%7E/g, '~'), encode(params).replace(/\+/g, ' ').replace(/%7E/g, '~')];
 
 	// Create oauth_signature
 	query.oauth_signature = hashString(consumer_secret + '&' + (token_secret || ''),

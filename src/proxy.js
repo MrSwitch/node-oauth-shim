@@ -35,7 +35,7 @@ function request(opts, callback) {
 		console.error(JSON.stringify(opts, null, 2));
 	}
 	return req;
-};
+}
 
 //
 // @param req				- Request Object
@@ -98,7 +98,7 @@ exports.proxy = function(req, res, options, buffer) {
 			'access-control-allow-origin': '*',
 			'access-control-allow-methods': 'OPTIONS, TRACE, GET, HEAD, POST, PUT, DELETE',
 			'content-length': 0
-//			'Access-Control-Max-Age': 3600, // seconds
+			//			'Access-Control-Max-Age': 3600, // seconds
 		};
 
 		// Return any headers the client has specified
@@ -144,10 +144,13 @@ exports.proxy = function(req, res, options, buffer) {
 			res.write(JSON.stringify({error: err}));
 		}
 
-		try { res.end(); }
-		catch (ex) { console.error('res.end error: %s', ex.message); }
+		try {
+			res.end();
+		}
+		catch (ex) {
+			console.error('res.end error: %s', ex.message);
+		}
 	}
-
 
 
 	///////////////////////////////////
@@ -160,10 +163,12 @@ exports.proxy = function(req, res, options, buffer) {
 		if (req.httpVersion === '1.0') {
 			if (req.headers.connection) {
 				_res.headers.connection = req.headers.connection;
-			} else {
+			}
+			else {
 				_res.headers.connection = 'close';
 			}
-		} else if (!_res.headers.connection) {
+		}
+		else if (!_res.headers.connection) {
 			if (req.headers.connection) {
 				_res.headers.connection = req.headers.connection;
 			}
@@ -188,8 +193,10 @@ exports.proxy = function(req, res, options, buffer) {
 		// removed.
 		//
 		var ended = false;
-		_res.on('close', function () {
-			if (!ended) { _res.emit('end'); }
+		_res.on('close', function() {
+			if (!ended) {
+				_res.emit('end');
+			}
 		});
 
 
@@ -200,31 +207,37 @@ exports.proxy = function(req, res, options, buffer) {
 		// pending data gets discarded, truncating the response.
 		// This code makes sure that we flush pending data.
 		//
-		_res.connection.on('end', function () {
+		_res.connection.on('end', function() {
 			if (_res.readable && _res.resume) {
 				_res.resume();
 			}
 		});
 
-		_res.on('end', function () {
+		_res.on('end', function() {
 			ended = true;
 			if (!errState) {
-				try { res.end(); }
-				catch (ex) { console.error('res.end error: %s', ex.message); }
+				try {
+					res.end();
+				}
+				catch (ex) {
+					console.error('res.end error: %s', ex.message);
+				}
 
 				// Emit the `end` event now that we have completed proxying
 				self.emit('end', req, res, _res);
 			}
 		});
 		// Allow observer to modify headers or abort response
-		try { self.emit('proxyResponse', req, res, _res); }
+		try {
+			self.emit('proxyResponse', req, res, _res);
+		}
 		catch (ex) {
 			errState = true;
 			return;
 		}
 
 		// Set the headers of the client response
-		Object.keys(_res.headers).forEach(function (key) {
+		Object.keys(_res.headers).forEach(function(key) {
 			res.setHeader(key, _res.headers[key]);
 		});
 		res.setHeader('access-control-allow-methods', 'OPTIONS, TRACE, GET, HEAD, POST, PUT');
@@ -243,13 +256,13 @@ exports.proxy = function(req, res, options, buffer) {
 		//
 		// Data
 		//
-		_res.on('data', function (chunk, encoding) {
+		_res.on('data', function(chunk, encoding) {
 			if (res.writable) {
 				// Only pause if the underlying buffers are full,
 				// *and* the connection is not in 'closing' state.
 				// Otherwise, the pause will cause pending data to
 				// be discarded and silently lost.
-				if (false === res.write(chunk, encoding) && _res.pause && _res.connection.readable) {
+				if (res.write(chunk, encoding) === false && _res.pause && _res.connection.readable) {
 					_res.pause();
 				}
 			}
@@ -290,7 +303,7 @@ exports.proxy = function(req, res, options, buffer) {
 	// Set Listeners to write data
 	///////////////////////////
 
-	req.on('data', function (chunk, encoding) {
+	req.on('data', function(chunk) {
 
 		if (errState) {
 			return;
@@ -304,7 +317,7 @@ exports.proxy = function(req, res, options, buffer) {
 		}
 
 		req.pause();
-		_req.once('drain', function () {
+		_req.once('drain', function() {
 			try {
 				req.resume();
 			}
@@ -326,7 +339,7 @@ exports.proxy = function(req, res, options, buffer) {
 	// When the incoming `req` ends, end the corresponding `reverseProxy`
 	// request unless we have entered an error state.
 	//
-	req.on('end', function () {
+	req.on('end', function() {
 		if (!errState) {
 			_req.end();
 		}
@@ -348,33 +361,33 @@ exports.proxy = function(req, res, options, buffer) {
 // This simply chooses to manage the scope of the events on a new Object literal as opposed to
 // [on the HttpProxy instance](https://github.com/nodejitsu/node-http-proxy/blob/v0.3.1/lib/node-http-proxy.js#L154).
 //
-exports.buffer = function (obj) {
-	var events = [],
-		onData,
-		onEnd;
+exports.buffer = function(obj) {
+	var events = [];
+	var onData;
+	var onEnd;
 
-	obj.on('data', onData = function (data, encoding) {
+	obj.on('data', onData = function(data, encoding) {
 		events.push(['data', data, encoding]);
 	});
 
-	obj.on('end', onEnd = function (data, encoding) {
+	obj.on('end', onEnd = function(data, encoding) {
 		events.push(['end', data, encoding]);
 	});
 
 	return {
-		end: function () {
+		end: function() {
 			obj.removeListener('data', onData);
 			obj.removeListener('end', onEnd);
 		},
-		destroy: function () {
+		destroy: function() {
 			this.end();
-			this.resume = function () {
+			this.resume = function() {
 				console.error('Cannot resume buffer after destroying it.');
 			};
 
 			onData = onEnd = events = obj = null;
 		},
-		resume: function () {
+		resume: function() {
 			this.end();
 			for (var i = 0, len = events.length; i < len; i++) {
 				obj.emit.apply(obj, events[i]);

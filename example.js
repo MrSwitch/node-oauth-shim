@@ -1,6 +1,6 @@
 // Demonstation of integration
-var oauthshim = require('./index.js'),
-	express = require('express');
+var oauthshim = require('./index.js');
+var express = require('express');
 
 var app = express();
 

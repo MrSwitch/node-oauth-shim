@@ -11,16 +11,14 @@
 // Dependiencies
 ////////////////////////////////
 
-var sign = require('../../src/sign'),
-	oauthshim = require('../../index'),
-	querystring = require('querystring'),
-	fs = require('fs'),
-	path = require('path');
+var sign = require('../../src/sign');
+var oauthshim = require('../../index');
+var querystring = require('querystring');
 
 // Setup a test server
-var request = require('supertest'),
-	expect = require('expect.js'),
-	express = require('express');
+var request = require('supertest');
+var expect = require('expect.js');
+var express = require('express');
 var app = express();
 
 ////////////////////////////////
@@ -106,12 +104,12 @@ describe('OAuth2 exchanging code for token, ', function() {
 
 	beforeEach(function() {
 		query = {
-			'code': '123456',
-			'client_id': 'client_id',
-			'redirect_uri': 'http://localhost:' + test_port + '/response',
-			'state': JSON.stringify({
-				'oauth': {
-					'grant': 'http://localhost:' + test_port + '/oauth/grant'
+			code: '123456',
+			client_id: 'client_id',
+			redirect_uri: 'http://localhost:' + test_port + '/response',
+			state: JSON.stringify({
+				oauth: {
+					grant: 'http://localhost:' + test_port + '/oauth/grant'
 				}
 			})
 		};
@@ -138,7 +136,7 @@ describe('OAuth2 exchanging code for token, ', function() {
 			.get('/proxy?' + querystring.stringify(query))
 			.expect('Location', query.redirect_uri + '#' + oauth2codeExchange)
 			.expect(302)
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -153,7 +151,7 @@ describe('OAuth2 exchanging code for token, ', function() {
 
 		request(app)
 			.get('/proxy?' + querystring.stringify(query))
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 			});
 	});
@@ -170,7 +168,7 @@ describe('OAuth2 exchanging code for token, ', function() {
 				state: encodeURIComponent(query.state)
 			}))
 			.expect(302)
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -192,7 +190,7 @@ describe('OAuth2 exchanging code for token, ', function() {
 				state: encodeURIComponent(query.state)
 			}))
 			.expect(302)
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -211,7 +209,7 @@ describe('OAuth2 exchanging code for token, ', function() {
 				state: encodeURIComponent(query.state)
 			}))
 			.expect(302)
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -229,7 +227,7 @@ describe('OAuth2 exchanging code for token, ', function() {
 				state: encodeURIComponent(query.state)
 			}))
 			.expect(302)
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -248,12 +246,12 @@ describe('OAuth2 exchange refresh_token for access token', function() {
 
 	beforeEach(function() {
 		query = {
-			'refresh_token': '123456',
-			'client_id': 'client_id',
-			'redirect_uri': 'http://localhost:' + test_port + '/response',
-			'state': JSON.stringify({
-				'oauth': {
-					'grant': 'http://localhost:' + test_port + '/oauth/grant'
+			refresh_token: '123456',
+			client_id: 'client_id',
+			redirect_uri: 'http://localhost:' + test_port + '/response',
+			state: JSON.stringify({
+				oauth: {
+					grant: 'http://localhost:' + test_port + '/oauth/grant'
 				}
 			})
 		};
@@ -264,21 +262,13 @@ describe('OAuth2 exchange refresh_token for access token', function() {
 		});
 	});
 
-	function redirect_uri(o) {
-		var hash = [];
-		for (var x in o) {
-			hash.push(x + '=' + o[x]);
-		}
-		return new RegExp(query.redirect_uri.replace(/\//g, '\\/') + '#' + hash.join('&'));
-	}
-
 	it('should redirect back to redirect_uri with an access_token and refresh_token', function(done) {
 
 		request(app)
 			.get('/proxy?' + querystring.stringify(query))
 			.expect('Location', query.redirect_uri + '#' + oauth2codeExchange + '&refresh_token=123456')
 			.expect(302)
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -287,7 +277,7 @@ describe('OAuth2 exchange refresh_token for access token', function() {
 
 	context('should permit a variety of redirect_uri\'s', function() {
 
-		['http://99problems.com', 'https://problems', , 'file:///problems'].forEach(function(s) {
+		['http://99problems.com', 'https://problems', 'file:///problems'].forEach(function(s) {
 
 			it('should regard ' + s + ' as valid', function(done) {
 
@@ -295,7 +285,7 @@ describe('OAuth2 exchange refresh_token for access token', function() {
 				request(app)
 					.get('/proxy?' + querystring.stringify(query))
 					.expect(302)
-					.end(function(err, res) {
+					.end(function(err) {
 						if (err) throw err;
 						done();
 					});
@@ -314,13 +304,11 @@ describe('OAuth2 exchange refresh_token for access token', function() {
 
 		request(app)
 			.get('/proxy?' + querystring.stringify(query))
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 			});
 	});
 });
-
-
 
 
 ////////////////////////////////
@@ -350,7 +338,6 @@ remoteServer.use('/oauth/token', function(req, res) {
 	res.write(body);
 	res.end();
 });
-
 
 
 ////////////////////////////////
@@ -389,7 +376,7 @@ describe('OAuth authenticate', function() {
 		var callback = 'http://location.com/?wicked=knarly&redirect_uri=' +
 					encodeURIComponent('http://local.knarly.com/hello.js/redirect.html' +
 						'?state=' + encodeURIComponent(JSON.stringify({proxy: 'http://localhost'})));
-		var signed = sign('https://api.dropbox.com/1/oauth/request_token', {'oauth_consumer_key': 't5s644xtv7n4oth', 'oauth_callback': callback}, 'h9b3uri43axnaid', '', '1354345524');
+		var signed = sign('https://api.dropbox.com/1/oauth/request_token', {oauth_consumer_key: 't5s644xtv7n4oth', oauth_callback: callback}, 'h9b3uri43axnaid', '', '1354345524');
 		expect(signed).to.equal('https://api.dropbox.com/1/oauth/request_token?oauth_callback=http%3A%2F%2Flocation.com%2F%3Fwicked%3Dknarly%26redirect_uri%3Dhttp%253A%252F%252Flocal.knarly.com%252Fhello.js%252Fredirect.html%253Fstate%253D%25257B%252522proxy%252522%25253A%252522http%25253A%25252F%25252Flocalhost%252522%25257D&oauth_consumer_key=t5s644xtv7n4oth&oauth_nonce=1354345524&oauth_signature_method=HMAC-SHA1&oauth_timestamp=1354345524&oauth_version=1.0&oauth_signature=7hCq53%2Bcl5PBpKbCa%2FdfMtlGkS8%3D');
 	});
 
@@ -399,7 +386,7 @@ describe('OAuth authenticate', function() {
 			.get('/proxy?' + param(query))
 			.expect('Location', new RegExp(query.state.oauth.auth.replace(/\//g, '\\/') + '\\?oauth_token\\=oauth_token'))
 			.expect(302)
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -413,7 +400,7 @@ describe('OAuth authenticate', function() {
 			.get('/proxy?' + param(query))
 			.expect('Location', new RegExp(query.state.oauth.auth.replace(/\//g, '\\/') + '\\?oauth_token\\=oauth_token\\&oauth_callback\\=' + encodeURIComponent(query.redirect_uri).replace(/\//g, '\\/')))
 			.expect(302)
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -432,7 +419,7 @@ describe('OAuth authenticate', function() {
 				state: encodeURIComponent(JSON.stringify(query.state))
 			}))
 			.expect(302)
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -450,7 +437,7 @@ describe('OAuth authenticate', function() {
 				state: encodeURIComponent(JSON.stringify(query.state))
 			}))
 			.expect(302)
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -468,7 +455,7 @@ describe('OAuth authenticate', function() {
 				state: encodeURIComponent(JSON.stringify(query.state))
 			}))
 			.expect(302)
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -481,7 +468,7 @@ describe('OAuth authenticate', function() {
 		request(app)
 			.get('/proxy?' + param(query))
 			.expect(200, JSON.stringify(error_unrecognised, null, 2))
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -494,7 +481,7 @@ describe('OAuth authenticate', function() {
 		request(app)
 			.get('/proxy?' + param(query))
 			.expect(200, JSON.stringify(error_unrecognised, null, 2))
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -513,7 +500,7 @@ describe('OAuth authenticate', function() {
 				state: encodeURIComponent(JSON.stringify(query.state))
 			}))
 			.expect(302)
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -531,7 +518,7 @@ describe('OAuth authenticate', function() {
 				state: encodeURIComponent(JSON.stringify(query.state))
 			}))
 			.expect(302)
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -581,7 +568,7 @@ describe('OAuth exchange token', function() {
 				access_token: encodeURIComponent('oauth_token:oauth_token_secret@' + query.client_id)
 			}))
 			.expect(302)
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -598,7 +585,7 @@ describe('OAuth exchange token', function() {
 		request(app)
 			.get('/proxy?' + param(query))
 			.expect(302)
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 			});
 	});
@@ -616,7 +603,7 @@ describe('OAuth exchange token', function() {
 				state: encodeURIComponent(JSON.stringify(query.state))
 			}))
 			.expect(302)
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -634,7 +621,7 @@ describe('OAuth exchange token', function() {
 				state: encodeURIComponent(JSON.stringify(query.state))
 			}))
 			.expect(302)
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -652,22 +639,13 @@ describe('OAuth exchange token', function() {
 				state: encodeURIComponent(JSON.stringify(query.state))
 			}))
 			.expect(302)
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
 	});
 
 });
-
-
-
-
-
-
-
-
-
 
 
 ////////////////////////////////
@@ -687,7 +665,7 @@ remoteServer.use('/api/', function(req, res) {
 	res.setHeader('x-test-method', req.method);
 	res.writeHead(200);
 
-//	console.log(req.headers);
+	//	console.log(req.headers);
 
 	var buf = '';
 	req.on('data', function(data) {
@@ -698,19 +676,18 @@ remoteServer.use('/api/', function(req, res) {
 		////////////////////
 		// TAILOR THE RESPONSE TO MATCH THE REQUEST
 		////////////////////
-		res.write([req.method, req.headers.header, buf].filter(function(a) {return !!a;}).join('&'));
+		res.write([req.method, req.headers.header, buf].filter(function(a) {
+			return !!a;
+		}).join('&'));
 		res.end();
 	});
 
 });
 
 
-
 // Test path
-var api_url = 'http://localhost:' + test_port + '/api/',
-	access_token = 'token_key:token_secret@oauth_consumer_key';
-
-
+var api_url = 'http://localhost:' + test_port + '/api/';
+var access_token = 'token_key:token_secret@oauth_consumer_key';
 
 
 ////////////////////////////////
@@ -718,7 +695,6 @@ var api_url = 'http://localhost:' + test_port + '/api/',
 ////////////////////////////////
 
 describe('Proxying requests with a shimed access_token', function() {
-
 
 
 	///////////////////////////////
@@ -731,7 +707,7 @@ describe('Proxying requests with a shimed access_token', function() {
 			.get('/proxy?access_token=' + access_token + '&path=' + api_url)
 			.expect('Location', new RegExp(api_url + '\\?oauth_consumer_key\\=oauth_consumer_key\\&oauth_nonce\\=.+&oauth_signature_method=HMAC-SHA1\\&oauth_timestamp=[0-9]+\\&oauth_token\\=token_key\\&oauth_version\\=1\\.0\\&oauth_signature\\=.+\\%3D'))
 			.expect(302)
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 			});
 	});
@@ -742,7 +718,7 @@ describe('Proxying requests with a shimed access_token', function() {
 			.get('/proxy?access_token=' + access_token + '&then=redirect&path=' + api_url)
 			.expect('Location', new RegExp(api_url + '\\?oauth_consumer_key\\=oauth_consumer_key\\&oauth_nonce\\=.+&oauth_signature_method=HMAC-SHA1\\&oauth_timestamp=[0-9]+\\&oauth_token\\=token_key\\&oauth_version\\=1\\.0\\&oauth_signature\\=.+\\%3D'))
 			.expect(302)
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 			});
 	});
@@ -757,7 +733,7 @@ describe('Proxying requests with a shimed access_token', function() {
 		request(app)
 			.get('/proxy?then=return&access_token=' + access_token + '&path=' + api_url)
 			.expect(200, new RegExp(api_url + '\\?oauth_consumer_key\\=oauth_consumer_key\\&oauth_nonce\\=.+&oauth_signature_method=HMAC-SHA1\\&oauth_timestamp=[0-9]+\\&oauth_token\\=token_key\\&oauth_version\\=1\\.0\\&oauth_signature\\=.+\\%3D'))
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 			});
 	});
@@ -766,8 +742,8 @@ describe('Proxying requests with a shimed access_token', function() {
 
 		request(app)
 			.get('/proxy?then=return&access_token=' + access_token + '&path=' + api_url + '&callback=myJSON')
-			.expect(200, new RegExp('myJSON\\(([\'\"])' + api_url + '\\?oauth_consumer_key\\=oauth_consumer_key\\&oauth_nonce\\=.+&oauth_signature_method=HMAC-SHA1\\&oauth_timestamp=[0-9]+\\&oauth_token\\=token_key\\&oauth_version\\=1\\.0\\&oauth_signature\\=.+\\%3D(\\1)\\)'))
-			.end(function(err, res) {
+			.expect(200, new RegExp('myJSON\\(([\'"])' + api_url + '\\?oauth_consumer_key\\=oauth_consumer_key\\&oauth_nonce\\=.+&oauth_signature_method=HMAC-SHA1\\&oauth_timestamp=[0-9]+\\&oauth_token\\=token_key\\&oauth_version\\=1\\.0\\&oauth_signature\\=.+\\%3D(\\1)\\)'))
+			.end(function(err) {
 				if (err) throw err;
 			});
 	});
@@ -777,7 +753,7 @@ describe('Proxying requests with a shimed access_token', function() {
 		request(app)
 			.get('/proxy?then=return&method=POST&access_token=' + access_token + '&path=' + api_url)
 			.expect(200, new RegExp(api_url + '\\?oauth_consumer_key\\=oauth_consumer_key\\&oauth_nonce\\=.+&oauth_signature_method=HMAC-SHA1\\&oauth_timestamp=[0-9]+\\&oauth_token\\=token_key\\&oauth_version\\=1\\.0\\&oauth_signature\\=.+\\%3D'))
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 			});
 	});
@@ -791,7 +767,7 @@ describe('Proxying requests with a shimed access_token', function() {
 		request(app)
 			.get('/proxy?then=proxy&access_token=' + access_token + '&path=' + api_url)
 			.expect('GET')
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -804,7 +780,7 @@ describe('Proxying requests with a shimed access_token', function() {
 			.send('POST_DATA')
 			.expect('Access-Control-Allow-Origin', '*')
 			.expect('POST&POST_DATA')
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -822,14 +798,13 @@ describe('Proxying requests with a shimed access_token', function() {
 			.post('/proxy?then=proxy&access_token=' + access_token + '&path=' + api_url)
 			.attach('file', './package.json')
 			.expect('Access-Control-Allow-Origin', '*')
-			.expect(/^POST\&(\-\-.*?)[\s\S]*(\1)\-\-(\r\n)?$/)
-			.end(function(err, res) {
+			.expect(/^POST&(--.*?)[\s\S]*(\1)--(\r\n)?$/)
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
 	});
 });
-
 
 
 describe('Proxying unsigned requests', function() {
@@ -844,31 +819,33 @@ describe('Proxying unsigned requests', function() {
 		request(app)
 			.get('/proxy?then=proxy&access_token=' + access_token + '&path=' + api_url)
 			.expect('GET')
-			.expect('x-test-url', /access_token\=token/)
-			.end(function(err, res) {
+			.expect('x-test-url', /access_token=token/)
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
 	});
 
+	/*
 	xit('should not sign the request if the OAuth1 access_token does not match any on record', function(done) {
 
 		var get = credentials.get;
 		credentials.get = function(query, callback) {
 			callback(null);
-		}
+		};
 
-		var unknown_oauth1_token = "user_token_key:user_token_secret@app_token_key";
+		var unknown_oauth1_token = 'user_token_key:user_token_secret@app_token_key';
 
 		request(app)
 			.get('/proxy?then=proxy&access_token=' + unknown_oauth1_token + '&path=' + api_url)
 			.expect('GET')
 			// .expect('x-test-url', /access_token\=token/)
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
 	});
+*/
 
 	it('should correctly return a 302 redirection', function() {
 
@@ -876,7 +853,7 @@ describe('Proxying unsigned requests', function() {
 			.get('/proxy?path=' + api_url)
 			.expect('Location', api_url)
 			.expect(302)
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 			});
 	});
@@ -885,7 +862,7 @@ describe('Proxying unsigned requests', function() {
 		request(app)
 			.get('/proxy?then=proxy&path=' + api_url)
 			.expect('GET')
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -897,7 +874,7 @@ describe('Proxying unsigned requests', function() {
 			.send('POST_DATA')
 			.expect('Access-Control-Allow-Origin', '*')
 			.expect('POST&POST_DATA')
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -908,8 +885,8 @@ describe('Proxying unsigned requests', function() {
 			.post('/proxy?then=proxy&path=' + api_url)
 			.attach('file', './package.json')
 			.expect('Access-Control-Allow-Origin', '*')
-			.expect(/^POST\&(\-\-.*?)[\s\S]*(\1)\-\-(\r\n)?$/)
-			.end(function(err, res) {
+			.expect(/^POST&(--.*?)[\s\S]*(\1)--(\r\n)?$/)
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -922,7 +899,7 @@ describe('Proxying unsigned requests', function() {
 			.set('header', 'header')
 			.expect('Access-Control-Allow-Origin', '*')
 			.expect('POST&header')
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -933,7 +910,7 @@ describe('Proxying unsigned requests', function() {
 			.del('/proxy?then=proxy&path=' + api_url)
 			.expect('Access-Control-Allow-Origin', '*')
 			.expect('DELETE')
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -946,7 +923,7 @@ describe('Proxying unsigned requests', function() {
 			.send('POST_DATA')
 			.expect('Access-Control-Allow-Origin', '*')
 			.expect(502)
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
@@ -959,7 +936,7 @@ describe('Proxying unsigned requests', function() {
 			.send('POST_DATA')
 			.expect('Access-Control-Allow-Origin', '*')
 			.expect(401)
-			.end(function(err, res) {
+			.end(function(err) {
 				if (err) throw err;
 				done();
 			});
