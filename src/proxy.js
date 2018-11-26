@@ -78,7 +78,7 @@ exports.proxy = function(req, res, options, buffer) {
 	// Loop through all req.headers
 	for (var header in req.headers) {
 		// Is this a custom header?
-		if (header.match(/^(x-|content-type)/i)) {
+		if (header.match(/^(x-|content-type|authorization|accept)/i)) {
 			options.headers[header] = req.headers[header];
 		}
 	}
