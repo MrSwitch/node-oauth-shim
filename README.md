@@ -31,7 +31,7 @@ var oauthshim = require('oauth-shim'),
 
 var app = express();
 
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 
 app.all('/oauthproxy', oauthshim);
