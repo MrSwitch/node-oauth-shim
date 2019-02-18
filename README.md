@@ -26,10 +26,14 @@ Middleware for Express/Connect
 
 ```javascript
 var oauthshim = require('oauth-shim'),
-	express = require('express');
+	express = require('express'),
+	bodyParser = require('body-parser');
 
 var app = express();
-app.listen(3000);
+
+app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.json());
+
 app.all('/oauthproxy', oauthshim);
 
 // Initiate the shim with Client ID's and secret, e.g.
@@ -44,6 +48,7 @@ oauthshim.init([{
 }
 , ...
 ]);
+app.listen(3000);
 ```
 
 The above code will put your shimming service to the pathname `http://localhost:3000/oauthproxy`.

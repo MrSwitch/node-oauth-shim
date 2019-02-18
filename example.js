@@ -1,8 +1,13 @@
 // Demonstation of integration
 var oauthshim = require('./index.js');
 var express = require('express');
+var bodyParser = require('body-parser');
 
 var app = express();
+
+// use bodyParser to enable form POST and JSON POST requests
+app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.json());
 
 // Define a path where to put this OAuth Shim
 app.all('/proxy', oauthshim);
