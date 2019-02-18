@@ -37,7 +37,7 @@
     "express": "^4.16.3",
     "mocha": "^5.2.0",
     "nyc": "^13.0.1",
-    "sinon": "^6.3.5",
+    "sinon": "^7.2.4",
     "supertest": "^3.3.0"
   },
   "dependencies": {}
