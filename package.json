@@ -31,14 +31,14 @@
   },
   "devDependencies": {
     "coveralls": "^3.0.2",
-    "eslint": "^5.6.1",
+    "eslint": "^5.14.1",
     "eslint-config-mr": "^1.1.0",
     "expect.js": "^0.3.1",
-    "express": "^4.16.3",
-    "mocha": "^5.2.0",
-    "nyc": "^13.0.1",
-    "sinon": "^6.3.5",
-    "supertest": "^3.3.0"
+    "express": "^4.16.4",
+    "mocha": "^6.0.0",
+    "nyc": "^13.3.0",
+    "sinon": "^7.2.4",
+    "supertest": "^3.4.2"
   },
   "dependencies": {}
 }
