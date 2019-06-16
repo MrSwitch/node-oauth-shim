@@ -32,7 +32,7 @@
   "devDependencies": {
     "coveralls": "^3.0.2",
     "eslint": "^5.14.1",
-    "eslint-config-mr": "^1.1.0",
+    "eslint-config-mr": "^1.2.2",
     "expect.js": "^0.3.1",
     "express": "^4.16.4",
     "mocha": "^6.0.0",
